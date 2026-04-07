@@ -1,0 +1,23 @@
+# Shared transitive dependency constraints to keep pip resolver tractable.
+# Install via: pip install -r requirements.txt -c constraints.txt
+
+# Google/Firebase stack
+google-api-core==2.24.0
+google-auth==2.37.0
+google-cloud-core==2.4.1
+google-cloud-firestore==2.19.0
+google-cloud-storage==2.19.0
+google-resumable-media==2.7.2
+googleapis-common-protos==1.66.0
+grpcio==1.68.1
+proto-plus==1.25.0
+protobuf==5.29.2
+
+# AWS/R2 stack
+botocore==1.35.92
+s3transfer==0.10.4
+
+# ASGI/web stack
+starlette==0.41.3
+anyio==4.8.0
+h11==0.14.0

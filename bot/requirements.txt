@@ -1,0 +1,9 @@
+# Telegram bot dependencies for the Nativa platform.
+#
+# python-telegram-bot v20+ uses the async/await API (Application class).
+# python-dotenv loads .env files for local development.
+# httpx is the async HTTP client used by the bot for internal API calls.
+
+python-telegram-bot>=20.7,<21.0
+python-dotenv>=1.0.0
+httpx>=0.27.0

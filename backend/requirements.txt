@@ -1,0 +1,48 @@
+# Nativa Backend — Python dependencies
+# Web framework and ASGI server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Database — async SQLAlchemy with PostgreSQL driver
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+
+# Database migrations
+alembic==1.14.0
+
+# Caching / message broker
+redis==5.2.1
+
+# Firebase Admin SDK (Firestore for speaking match signalling)
+firebase-admin==6.6.0
+
+# Cloudflare R2 / AWS S3 compatible storage
+boto3==1.35.92
+
+# Telegram Bot API (>= 20.0 uses asyncio natively)
+python-telegram-bot==22.7
+
+# HTTP client for fetching articles
+httpx==0.27.2
+
+# HTML parsing for article extraction
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# YouTube subtitle extraction
+youtube-transcript-api==0.6.2
+
+# Google Cloud services
+google-cloud-translate==3.18.0
+google-cloud-texttospeech==2.23.0
+google-generativeai==0.8.4
+
+# Data validation
+pydantic[email]==2.10.4
+pydantic-settings==2.7.0
+
+# File uploads via FastAPI
+python-multipart==0.0.20
+
+# Environment variable loading
+python-dotenv==1.0.1

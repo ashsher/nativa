@@ -1,0 +1,123 @@
+# docker-compose.yml — Nativa Part 2 multi-service orchestration.
+#
+# Services:
+#   db       — PostgreSQL 16 (persistent data store)
+#   redis    — Redis 7       (translation cache + quota counters)
+#   backend  — FastAPI app   (core business logic + API)
+#   bot      — Telegram bot  (notifications + payment webhooks)
+#   nginx    — Reverse proxy (HTTPS termination + static files)
+
+version: "3.8"
+
+# ── Shared network ────────────────────────────────────────────────────────────
+# All services communicate on this bridge network using their service names
+# as DNS hostnames (e.g. the backend can reach the DB at "db:5432").
+networks:
+  nativa_net:
+    driver: bridge
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
+# Named volumes persist data across container restarts and redeployments.
+volumes:
+  postgres_data:  # PostgreSQL data directory
+  redis_data:     # Redis append-only log for persistence
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+
+  # ── PostgreSQL 16 ───────────────────────────────────────────────────────────
+  # Primary relational database. Data is stored in the postgres_data volume
+  # so it survives container recreation. Uses alpine for a minimal image size.
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      # Database name — defaults to 'nativa' if not set in .env.
+      POSTGRES_DB:       ${POSTGRES_DB:-nativa}
+      # Database user — defaults to 'nativa'.
+      POSTGRES_USER:     ${POSTGRES_USER:-nativa}
+      # Database password — required; no default to force explicit configuration.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    volumes:
+      # Mount the named volume to PostgreSQL's default data directory.
+      - postgres_data:/var/lib/postgresql/data
+    networks: [nativa_net]
+    healthcheck:
+      # pg_isready checks if the PostgreSQL server is accepting connections.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nativa}"]
+      interval: 10s  # check every 10 seconds
+      timeout: 5s    # fail if no response within 5 seconds
+      retries: 5     # mark unhealthy after 5 consecutive failures
+
+  # ── Redis 7 ─────────────────────────────────────────────────────────────────
+  # Used for two purposes:
+  #   1. Translation cache: reduces Google Translate API calls.
+  #   2. Quota counters: tracks daily AI/SRS/speaking usage per user.
+  # append-only mode ensures data survives Redis restarts.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Enable append-only persistence so cached translations and quota counts
+    # survive container restarts.
+    command: redis-server --appendonly yes
+    volumes:
+      # Mount the named volume to Redis's data directory.
+      - redis_data:/data
+    networks: [nativa_net]
+    healthcheck:
+      # PING returns PONG when Redis is healthy.
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  # Core application server. Runs Uvicorn with a single worker; scale
+  # horizontally by adding more backend replicas behind nginx upstream.
+  backend:
+    build: ./backend       # build from nativa/backend/Dockerfile
+    restart: unless-stopped
+    # Run Uvicorn on port 8000; nginx proxies /api/* to this service.
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    # Load all environment variables from the root .env file.
+    env_file: .env
+    networks: [nativa_net]
+    depends_on:
+      # Wait until both DB and Redis pass their health checks before starting.
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Telegram Bot ─────────────────────────────────────────────────────────────
+  # Handles /start, /help, Telegram Stars payments, and daily reminder jobs.
+  # The bot communicates with the backend over the internal Docker network.
+  bot:
+    build: ./bot           # build from nativa/bot/Dockerfile
+    restart: unless-stopped
+    env_file: .env         # needs TELEGRAM_BOT_TOKEN, MINI_APP_URL, BACKEND_URL
+    networks: [nativa_net]
+    depends_on:
+      # Bot should start after the backend is up so its HTTP calls succeed.
+      - backend
+
+  # ── Nginx Reverse Proxy ───────────────────────────────────────────────────────
+  # Serves the frontend static files and proxies /api/* to the backend.
+  # Terminates HTTPS and applies security headers + rate limiting.
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"    # HTTP — redirects to HTTPS
+      - "443:443"  # HTTPS — main traffic
+    volumes:
+      # Mount the nginx config (read-only so containers cannot modify it).
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Mount the frontend static files directory (read-only).
+      - ./frontend:/usr/share/nginx/html:ro
+    networks: [nativa_net]
+    depends_on:
+      # Nginx must start after the backend so the upstream is available.
+      - backend
