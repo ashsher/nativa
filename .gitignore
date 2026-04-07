@@ -31,3 +31,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Secrets and credentials (keep example files)
+secrets/
+*.json
