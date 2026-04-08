@@ -21,6 +21,7 @@ body {
     linear-gradient(180deg, #f8fafc 0%, #eff6ff 46%, #f8fafc 100%);
   color: var(--theme-text);
   font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.55;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -64,7 +65,7 @@ label {
 
 .app-header__title {
   margin: 0;
-  font-size: clamp(1.05rem, 3vw, 1.24rem);
+  font-size: clamp(1.08rem, 3vw, 1.3rem);
   font-weight: 700;
 }
 
@@ -83,7 +84,8 @@ label {
 
 .tab-panel h2 {
   margin: 0 0 8px;
-  font-size: clamp(1.02rem, 2.7vw, 1.35rem);
+  font-size: clamp(1.08rem, 2.7vw, 1.42rem);
+  letter-spacing: -0.03em;
 }
 
 .video-input-state,
@@ -98,7 +100,7 @@ label {
   background: var(--theme-surface);
   border: 1px solid var(--theme-border);
   border-radius: 22px;
-  padding: 18px;
+  padding: 20px;
   box-shadow: var(--theme-shadow);
 }
 
@@ -118,7 +120,7 @@ select,
   border-radius: 14px;
   background: #ffffff;
   color: var(--theme-text);
-  font-size: 0.96rem;
+  font-size: 0.98rem;
   line-height: 1.35;
   padding: 12px 14px;
   transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
@@ -150,8 +152,9 @@ button {
 
 .btn {
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   border: 1px solid transparent;
+  min-height: 42px;
 }
 
 .btn--primary,
@@ -242,9 +245,9 @@ button {
 .session-complete {
   margin-top: 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 16px;
+  border-radius: 18px;
   background: #ffffff;
-  padding: 12px;
+  padding: 14px;
 }
 
 .subtitle-segment,
@@ -310,8 +313,8 @@ button {
 
 .profile-header {
   border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .profile-avatar,
@@ -380,9 +383,10 @@ button {
 }
 
 .bottom-nav__btn span {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
   line-height: 1;
+  letter-spacing: -0.01em;
 }
 
 .bottom-nav__btn--active {
@@ -437,6 +441,46 @@ button {
 .compare-table th {
   background: #eff6ff;
   color: #1e3a8a;
+}
+
+.premium-card {
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.premium-card--active {
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.premium-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.premium-card__spark {
+  color: #2563eb;
+  font-size: 1rem;
+}
+
+.premium-card__title {
+  margin: 10px 0 4px;
+  font-size: 1.03rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.premium-card__meta {
+  margin: 0;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.premium-card__cta {
+  margin-top: 12px;
 }
 
 .ai-float-btn {

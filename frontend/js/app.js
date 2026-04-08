@@ -238,18 +238,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Mark the app as loaded to trigger the appFadeIn CSS animation.
   document.getElementById('app').classList.add('app--loaded');
 
-  // If the user has not completed their profile (no city), send them to profile tab
-  // first so they fill in their location before accessing features.
-  if (!window.currentUser || !window.currentUser.city) {
-    switchTab('profile');
-    // Show a helpful nudge asking the user to complete their profile.
-    showToast("Iltimos, profilingizni to'ldiring.", 'default', 4000);
-    return; // Stop here; profile tab is now active
-  }
-
-  // Profile is complete â€” go straight to the Video tab (default landing).
-  switchTab('video');
-
   // â”€â”€ Wire bottom-nav buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Attach a click listener to every bottom-nav button.
   // Using event delegation on the nav element would also work but explicit
@@ -273,5 +261,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       switchTab('video');
     });
   }
+
+  // If the user has not completed their profile (no city), send them to profile tab
+  // first so they fill in their location before accessing features.
+  if (!window.currentUser || !window.currentUser.city) {
+    switchTab('profile');
+    showToast("Iltimos, profilingizni to'ldiring.", 'default', 4000);
+    return;
+  }
+
+  // Profile is complete â€” go straight to the Video tab (default landing).
+  switchTab('video');
 });
 

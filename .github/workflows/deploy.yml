@@ -2,11 +2,11 @@ name: CI and Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-main
+  group: deploy-master
   cancel-in-progress: true
 
 jobs:
@@ -55,9 +55,9 @@ jobs:
 
             cd "$VPS_APP_DIR"
 
-            git fetch origin main
-            git checkout main
-            git pull --ff-only origin main
+            git fetch origin master
+            git checkout master
+            git pull --ff-only origin master
 
             docker compose pull || true
             docker compose up -d --build

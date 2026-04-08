@@ -163,9 +163,15 @@ function renderArticle(data) {
   // Build a fragment for efficient DOM insertion.
   const frag = document.createDocumentFragment();
 
-  // Each element in paragraphs is an array of token objects.
+  // Each element in paragraphs may be:
+  // 1) legacy format: token[] or
+  // 2) current backend format: { tokens: token[], ... }
   const paragraphs = data.paragraphs || [];
-  paragraphs.forEach(tokens => {
+  paragraphs.forEach(paragraph => {
+    const tokens = Array.isArray(paragraph)
+      ? paragraph
+      : (paragraph && Array.isArray(paragraph.tokens) ? paragraph.tokens : []);
+
     // Create a paragraph element.
     const p = document.createElement('p');
     p.className = 'paragraph';

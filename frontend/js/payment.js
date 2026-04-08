@@ -73,7 +73,9 @@ const Payment = (() => {
         // The user completed the payment — verify it with the backend.
         try {
           // Step 4a: Verify the payment and activate premium on the backend.
-          await Api.verifyPayment(data.transaction_ref || '');
+          if (data.transaction_ref) {
+            await Api.verifyPayment(data.transaction_ref, data.amount_stars || 200);
+          }
         } catch (e) {
           // Verification failure is non-fatal; premium may still activate via webhook.
           // Show a softer success message since payment did go through.

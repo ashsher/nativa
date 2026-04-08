@@ -146,7 +146,19 @@ const Popup = (() => {
     const btn = document.getElementById('popup-save-btn');
     try {
       // Call the backend to add the word to the user's vocabulary deck.
-      await Api.addWord(word);
+      const translation = document.getElementById('popup-translation').textContent || word;
+      const examples = [];
+      document.querySelectorAll('#popup-examples .popup__example').forEach((el) => {
+        const sentenceEl = el.querySelector('.popup__example-sentence');
+        const translationEl = el.querySelector('.popup__example-translation');
+        if (sentenceEl && translationEl) {
+          examples.push({
+            sentence: sentenceEl.textContent || '',
+            translation: translationEl.textContent || '',
+          });
+        }
+      });
+      await Api.addWord(word, translation, examples.length ? examples : null);
 
       // Visually confirm the save: change button text and apply the savePop animation.
       btn.textContent = '✓ Saqlandi';

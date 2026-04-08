@@ -1,5 +1,5 @@
 /**
- * profile.js — User profile module with tag chip inputs.
+ * profile.js â€” User profile module with tag chip inputs.
  *
  * Features:
  *   - Loads and displays the user's Telegram profile info.
@@ -9,13 +9,13 @@
  *   - Premium status section showing quota usage or expiry date.
  */
 
-// ── Module-level state ──────────────────────────────────────────────────────
+// â”€â”€ Module-level state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Arrays of tag strings for interests and hobbies (mutable via chip input).
 let _interests = [];
 let _hobbies   = [];
 
 /**
- * renderProfileView — called by app.js onTabActivated('profile').
+ * renderProfileView â€” called by app.js onTabActivated('profile').
  * Wires form events once and loads the profile.
  */
 function renderProfileView() {
@@ -43,7 +43,7 @@ function renderProfileView() {
 }
 
 /**
- * loadProfile — fetch the user's profile and render all sections.
+ * loadProfile â€” fetch the user's profile and render all sections.
  */
 async function loadProfile() {
   let user;
@@ -57,7 +57,7 @@ async function loadProfile() {
     return;
   }
 
-  // ── Render the display section ─────────────────────────────────────────
+  // â”€â”€ Render the display section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Full name from Telegram data.
   const fullNameEl = document.getElementById('profile-full-name');
   if (fullNameEl) {
@@ -74,7 +74,7 @@ async function loadProfile() {
   // Render the avatar.
   renderAvatar(user);
 
-  // ── Pre-fill the editable form fields ─────────────────────────────────
+  // â”€â”€ Pre-fill the editable form fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const cityInput    = document.getElementById('profile-city');
   const countryInput = document.getElementById('profile-country');
   if (cityInput)    cityInput.value    = user.city    || '';
@@ -82,28 +82,29 @@ async function loadProfile() {
 
   // Pre-fill interests array and render chips.
   _interests = Array.isArray(user.interests) ? [...user.interests] : [];
-  renderTagChips('interests-tags', _interests, (removed) => {
-    // Remove the tag from the array and re-render.
+  const removeInterestTag = (removed) => {
     _interests = _interests.filter(t => t !== removed);
-    renderTagChips('interests-tags', _interests, arguments.callee);
-  });
+    renderTagChips('interests-tags', _interests, removeInterestTag);
+  };
+  renderTagChips('interests-tags', _interests, removeInterestTag);
 
   // Pre-fill hobbies array and render chips.
   _hobbies = Array.isArray(user.hobbies) ? [...user.hobbies] : [];
-  renderTagChips('hobbies-tags', _hobbies, (removed) => {
+  const removeHobbyTag = (removed) => {
     _hobbies = _hobbies.filter(t => t !== removed);
-    renderTagChips('hobbies-tags', _hobbies, arguments.callee);
-  });
+    renderTagChips('hobbies-tags', _hobbies, removeHobbyTag);
+  };
+  renderTagChips('hobbies-tags', _hobbies, removeHobbyTag);
 
-  // ── Render the premium status section ─────────────────────────────────
+  // â”€â”€ Render the premium status section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderPremiumSection(user);
 }
 
 /**
- * renderAvatar — display the user's Telegram profile photo or a fallback
+ * renderAvatar â€” display the user's Telegram profile photo or a fallback
  * coloured circle with their first initial.
  *
- * @param {object} user — user object from the backend
+ * @param {object} user â€” user object from the backend
  */
 function renderAvatar(user) {
   const avatarEl = document.getElementById('profile-avatar');
@@ -135,11 +136,11 @@ function renderAvatar(user) {
 }
 
 /**
- * renderTagChips — render a list of tags as removable chip elements.
+ * renderTagChips â€” render a list of tags as removable chip elements.
  *
- * @param {string}   containerId — ID of the .tags container div
- * @param {string[]} tags        — array of tag strings to render
- * @param {Function} onRemove    — callback called with the removed tag string
+ * @param {string}   containerId â€” ID of the .tags container div
+ * @param {string[]} tags        â€” array of tag strings to render
+ * @param {Function} onRemove    â€” callback called with the removed tag string
  */
 function renderTagChips(containerId, tags, onRemove) {
   const container = document.getElementById(containerId);
@@ -157,10 +158,10 @@ function renderTagChips(containerId, tags, onRemove) {
     const textNode = document.createTextNode(tag);
     chip.appendChild(textNode);
 
-    // Remove button (×) inside each chip.
+    // Remove button (x) inside each chip.
     const removeBtn = document.createElement('button');
     removeBtn.className   = 'tag-chip__remove';
-    removeBtn.textContent = '×';
+    removeBtn.textContent = 'x';
     removeBtn.setAttribute('aria-label', `${tag} ni olib tashlash`);
     removeBtn.setAttribute('type', 'button'); // prevent form submission on click
 
@@ -175,14 +176,14 @@ function renderTagChips(containerId, tags, onRemove) {
 }
 
 /**
- * wireTagInput — attach Enter/comma key event handlers to a tag input field.
+ * wireTagInput â€” attach Enter/comma key event handlers to a tag input field.
  * When the user presses Enter or types a comma, the current input value is
  * added as a new chip (if non-empty and not a duplicate).
  *
- * @param {string}   inputId     — ID of the text input element
- * @param {Function} getArray    — returns the current tags array (getter)
- * @param {Function} setArray    — replaces the tags array (setter)
- * @param {string}   containerId — ID of the .tags container to re-render into
+ * @param {string}   inputId     â€” ID of the text input element
+ * @param {Function} getArray    â€” returns the current tags array (getter)
+ * @param {Function} setArray    â€” replaces the tags array (setter)
+ * @param {string}   containerId â€” ID of the .tags container to re-render into
  */
 function wireTagInput(inputId, getArray, setArray, containerId) {
   const input = document.getElementById(inputId);
@@ -210,12 +211,12 @@ function wireTagInput(inputId, getArray, setArray, containerId) {
       setArray(updated);
 
       // Re-render chips with the updated array.
-      renderTagChips(containerId, updated, (removed) => {
-        // Inline onRemove: filter and re-render.
+      const onRemove = (removed) => {
         const after = getArray().filter(t => t !== removed);
         setArray(after);
-        renderTagChips(containerId, after, arguments.callee);
-      });
+        renderTagChips(containerId, after, onRemove);
+      };
+      renderTagChips(containerId, updated, onRemove);
 
       // Clear the input field ready for the next tag.
       input.value = '';
@@ -224,7 +225,7 @@ function wireTagInput(inputId, getArray, setArray, containerId) {
 }
 
 /**
- * submitProfile — collect form data and save it to the backend.
+ * submitProfile â€” collect form data and save it to the backend.
  */
 async function submitProfile() {
   // Read city and country from the text inputs.
@@ -258,61 +259,66 @@ async function submitProfile() {
 }
 
 /**
- * renderPremiumSection — display the user's current plan in the premium section.
+ * renderPremiumSection â€” display the user's current plan in the premium section.
  *
  * Free users see:   quota usage stats + "Premium olish" button.
- * Premium users see: "Premium ⚡" badge + subscription expiry date.
+ * Premium users see: "Premium âš¡" badge + subscription expiry date.
  *
- * @param {object} user — the user object from the backend
+ * @param {object} user â€” the user object from the backend
  */
 function renderPremiumSection(user) {
   const section = document.getElementById('premium-section');
   if (!section) return;
 
   if (user.is_premium) {
-    // Format the expiry date as DD.MM.YYYY.
     let expiryStr = '';
     if (user.premium_expires_at) {
       const d = new Date(user.premium_expires_at);
-      // Zero-pad day and month for consistent formatting.
-      const dd   = String(d.getDate()).padStart(2, '0');
-      const mm   = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
       expiryStr = `${dd}.${mm}.${yyyy}`;
     }
 
-    // Render the Premium badge and expiry.
     section.innerHTML = `
-      <span class="badge badge--accent">Premium ⚡</span>
-      <p class="text-secondary" style="margin-top:0.5rem;">Obuna: ${expiryStr || 'Faol'}</p>
+      <div class="premium-card premium-card--active">
+        <div class="premium-card__head">
+          <span class="badge badge--accent">Premium</span>
+          <span class="premium-card__spark">*</span>
+        </div>
+        <h3 class="premium-card__title">Premium faol</h3>
+        <p class="premium-card__meta">Obuna: ${expiryStr || 'Faol'}</p>
+      </div>
     `;
-  } else {
-    // Free user: show quota usage and upgrade button.
-    // Quota counts come from the user object if the backend exposes them.
-    const aiUsed      = user.daily_ai_count      || 0;
-    const srsUsed     = user.daily_srs_count     || 0;
-    const speakUsed   = user.daily_speak_count   || 0;
+    return;
+  }
 
-    section.innerHTML = `
-      <span class="badge" style="background:var(--color-bg-surface);color:var(--color-text-secondary);">Bepul reja</span>
-      <p class="text-secondary" style="margin-top:0.5rem;font-size:var(--text-sm);">
-        AI: ${aiUsed}/10 | SRS: ${srsUsed}/10 | Gaplash: ${speakUsed}/5
-      </p>
-      <button class="btn btn--primary btn--full" id="profile-upgrade-btn" style="margin-top:0.75rem;">
-        Premium olish — $2/oy ⚡
+  const aiUsed = user.daily_ai_count || 0;
+  const srsUsed = user.daily_srs_count || 0;
+  const speakUsed = user.daily_speak_count || 0;
+
+  section.innerHTML = `
+    <div class="premium-card">
+      <div class="premium-card__head">
+        <span class="badge">Bepul reja</span>
+      </div>
+      <h3 class="premium-card__title">Cheksiz imkoniyatga o'ting</h3>
+      <p class="premium-card__meta">AI: ${aiUsed}/10 • SRS: ${srsUsed}/10 • Gaplash: ${speakUsed}/5</p>
+      <button class="btn btn--primary btn--full premium-card__cta" id="profile-upgrade-btn">
+        Premium olish - $2/oy
       </button>
-    `;
+    </div>
+  `;
 
-    // Wire the upgrade button to open the payment modal.
-    const upgradeBtn = document.getElementById('profile-upgrade-btn');
-    if (upgradeBtn) {
-      upgradeBtn.addEventListener('click', () => {
-        // Show the premium upgrade modal with a generic profile prompt.
-        if (window.Payment) Payment.showUpgradeModal('profile');
-      });
-    }
+  const upgradeBtn = document.getElementById('profile-upgrade-btn');
+  if (upgradeBtn) {
+    upgradeBtn.addEventListener('click', () => {
+      if (window.Payment) Payment.showUpgradeModal('profile');
+    });
   }
 }
 
 // Expose loadProfile globally so payment.js can call it after a successful payment.
 window.loadProfile = loadProfile;
+
+

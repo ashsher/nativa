@@ -214,8 +214,12 @@ async function addWord() {
   }
 
   try {
+    // Get translation first because backend requires translation in payload.
+    const translationData = await Api.translate(word);
+    const translation = (translationData && translationData.translation) ? translationData.translation : word;
+
     // Add the word to the deck via the API.
-    await Api.addWord(word);
+    await Api.addWord(word, translation, translationData.examples || null);
     // Clear the input field for the next word.
     input.value = '';
     // Show success feedback.
