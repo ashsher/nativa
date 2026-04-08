@@ -12,13 +12,52 @@ via AuthMiddleware.
 from __future__ import annotations
 
 from fastapi import APIRouter, Body, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+from app.models.user import User, UserLanguage
 from app.schemas.user import UserResponse
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _to_user_response(user: User) -> UserResponse:
+    """
+    Build a fully materialized UserResponse to avoid async lazy-load at serialize time.
+    """
+    languages = []
+    for ul in (user.languages or []):
+        lang = ul.language
+        if not lang:
+            continue
+        languages.append(
+            {
+                "user_language_id": ul.user_language_id,
+                "language_id": ul.language_id,
+                "code": lang.code,
+                "name_en": lang.name_en,
+                "name_uz": lang.name_uz,
+                "is_active": ul.is_active,
+            }
+        )
+
+    return UserResponse(
+        user_id=user.user_id,
+        telegram_id=user.telegram_id,
+        first_name=user.first_name,
+        username=user.username,
+        city=user.city,
+        country=user.country,
+        interests=user.interests,
+        hobbies=user.hobbies,
+        is_premium=user.is_premium,
+        premium_expires_at=user.premium_expires_at,
+        created_at=user.created_at,
+        languages=languages,
+    )
 
 
 @router.post(
@@ -49,12 +88,13 @@ async def validate(
     # --- Step 2: Create or update user in the database ---
     user = await auth_service.upsert_user(db, telegram_user)
 
-    # --- Step 3 & 4: Eagerly load languages and return the user ---
-    # SQLAlchemy lazy-loads relationships by default; we need to access them
-    # within the session context to avoid DetachedInstanceError.
-    await db.refresh(user, attribute_names=["languages"])
-    for ul in user.languages:
-        # Touch the language FK so it is loaded before the session closes.
-        _ = ul.language
+    # --- Step 3: Re-query with eager loading to avoid MissingGreenlet ---
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.languages).selectinload(UserLanguage.language))
+        .where(User.user_id == user.user_id)
+    )
+    user_loaded = result.scalar_one()
 
-    return user  # type: ignore[return-value]
+    # --- Step 4: Return fully materialized response ---
+    return _to_user_response(user_loaded)

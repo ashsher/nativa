@@ -1,8 +1,8 @@
 """
-app/routers/user.py — User profile endpoints.
+app/routers/user.py - User profile endpoints.
 
-GET  /api/users/me  — Return the current user's full profile.
-PUT  /api/users/me  — Update the current user's profile fields.
+GET  /api/users/me  - Return the current user's full profile.
+PUT  /api/users/me  - Update the current user's profile fields.
 """
 
 from __future__ import annotations
@@ -10,32 +10,73 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserLanguage
 from app.schemas.user import UserResponse, UserUpdate
 from app.services import auth_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-async def _get_current_user(
-    request: Request, db: AsyncSession
-) -> User:
+def _to_user_response(user: User) -> UserResponse:
     """
-    Dependency helper that loads the full User ORM object from the database
-    using the Telegram user ID stored in request.state.user by AuthMiddleware.
+    Build a fully materialized UserResponse to avoid async lazy-load at serialize time.
     """
-    # The middleware attaches a dict with at least {"id": <telegram_id>}.
+    languages = []
+    for ul in (user.languages or []):
+        lang = ul.language
+        if not lang:
+            continue
+        languages.append(
+            {
+                "user_language_id": ul.user_language_id,
+                "language_id": ul.language_id,
+                "code": lang.code,
+                "name_en": lang.name_en,
+                "name_uz": lang.name_uz,
+                "is_active": ul.is_active,
+            }
+        )
+
+    return UserResponse(
+        user_id=user.user_id,
+        telegram_id=user.telegram_id,
+        first_name=user.first_name,
+        username=user.username,
+        city=user.city,
+        country=user.country,
+        interests=user.interests,
+        hobbies=user.hobbies,
+        is_premium=user.is_premium,
+        premium_expires_at=user.premium_expires_at,
+        created_at=user.created_at,
+        languages=languages,
+    )
+
+
+async def _get_current_user(request: Request, db: AsyncSession) -> User:
+    """
+    Load the full User ORM object from DB using authenticated Telegram ID.
+    """
     telegram_id: int = request.state.user["id"]
 
     result = await db.execute(
-        select(User).where(User.telegram_id == telegram_id)
+        select(User)
+        .options(selectinload(User.languages).selectinload(UserLanguage.language))
+        .where(User.telegram_id == telegram_id)
     )
     user = result.scalar_one_or_none()
+
     if user is None:
-        # The user passed auth but doesn't exist yet — create them.
         user = await auth_service.upsert_user(db, request.state.user)
+        result = await db.execute(
+            select(User)
+            .options(selectinload(User.languages).selectinload(UserLanguage.language))
+            .where(User.user_id == user.user_id)
+        )
+        user = result.scalar_one()
 
     return user
 
@@ -49,21 +90,8 @@ async def get_me(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
-    """
-    Return the full profile for the currently authenticated user.
-
-    The user is identified via the Telegram ID in request.state.user,
-    which was populated by AuthMiddleware.
-    """
-    # Load the user from DB.
     user = await _get_current_user(request, db)
-
-    # Eagerly load language enrolments within the session context.
-    await db.refresh(user, attribute_names=["languages"])
-    for ul in user.languages:
-        _ = ul.language
-
-    return user  # type: ignore[return-value]
+    return _to_user_response(user)
 
 
 @router.put(
@@ -76,25 +104,19 @@ async def update_me(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
-    """
-    Update mutable profile fields: city, country, interests, hobbies.
-
-    Only fields included in the request body are updated (partial update).
-    """
-    # Load the user.
     user = await _get_current_user(request, db)
 
-    # Apply only the fields that were explicitly provided in the payload.
     update_data = payload.model_dump(exclude_none=True)
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    # Flush to DB (commit happens in get_db dependency).
     await db.flush()
 
-    # Reload relationships for the response.
-    await db.refresh(user, attribute_names=["languages"])
-    for ul in user.languages:
-        _ = ul.language
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.languages).selectinload(UserLanguage.language))
+        .where(User.user_id == user.user_id)
+    )
+    user_loaded = result.scalar_one()
 
-    return user  # type: ignore[return-value]
+    return _to_user_response(user_loaded)
