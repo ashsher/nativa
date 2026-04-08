@@ -29,6 +29,21 @@ let _activeTabIndex = 0;
 // Tab order used to determine slide direction (left vs right).
 const TAB_ORDER = ['video', 'reading', 'vocab', 'speak', 'profile'];
 
+// Surface unexpected runtime errors to make debugging easier in production.
+window.addEventListener('error', (event) => {
+  console.error('Runtime error:', event.error || event.message);
+  if (typeof window.showToast === 'function') {
+    window.showToast("Kutilmagan xatolik yuz berdi. Sahifani yangilang.", 'error', 5000);
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+  if (typeof window.showToast === 'function') {
+    window.showToast("So'rov bajarilmadi. Qayta urinib ko'ring.", 'error', 5000);
+  }
+});
+
 /**
  * switchTab â€” activate a named tab panel and update the header title.
  *

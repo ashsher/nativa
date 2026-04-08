@@ -20,17 +20,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- CSS load order matters: variables first so all tokens are defined before they are used -->
-  <link rel="stylesheet" href="css/variables.css" />   <!-- design tokens -->
-  <link rel="stylesheet" href="css/reset.css" />        <!-- browser normalisation -->
-  <link rel="stylesheet" href="css/base.css" />         <!-- global element styles -->
-  <link rel="stylesheet" href="css/components.css" />   <!-- shared components: btn, badge, card, toast, popup -->
-  <link rel="stylesheet" href="css/video.css" />        <!-- video mode specific styles -->
-  <link rel="stylesheet" href="css/reading.css" />      <!-- reading mode specific styles -->
-  <link rel="stylesheet" href="css/vocabulary.css" />   <!-- vocabulary / SRS styles -->
-  <link rel="stylesheet" href="css/speaking.css" />     <!-- speaking partner styles -->
-  <link rel="stylesheet" href="css/profile.css" />      <!-- profile form styles -->
-  <link rel="stylesheet" href="css/animations.css" />   <!-- keyframes and motion utilities -->
-  <link rel="stylesheet" href="css/theme.css" />        <!-- final visual theme overrides -->
+  <link rel="stylesheet" href="css/variables.css?v=20260408c" />   <!-- design tokens -->
+  <link rel="stylesheet" href="css/reset.css?v=20260408c" />        <!-- browser normalisation -->
+  <link rel="stylesheet" href="css/base.css?v=20260408c" />         <!-- global element styles -->
+  <link rel="stylesheet" href="css/components.css?v=20260408c" />   <!-- shared components: btn, badge, card, toast, popup -->
+  <link rel="stylesheet" href="css/video.css?v=20260408c" />        <!-- video mode specific styles -->
+  <link rel="stylesheet" href="css/reading.css?v=20260408c" />      <!-- reading mode specific styles -->
+  <link rel="stylesheet" href="css/vocabulary.css?v=20260408c" />   <!-- vocabulary / SRS styles -->
+  <link rel="stylesheet" href="css/speaking.css?v=20260408c" />     <!-- speaking partner styles -->
+  <link rel="stylesheet" href="css/profile.css?v=20260408c" />      <!-- profile form styles -->
+  <link rel="stylesheet" href="css/animations.css?v=20260408c" />   <!-- keyframes and motion utilities -->
+  <link rel="stylesheet" href="css/theme.css?v=20260408c" />        <!-- final visual theme overrides -->
 
   <title>Nativa</title>
 </head>
@@ -465,21 +465,21 @@
      and popup/ai_popup/payment before the feature modules that call them.
      ────────────────────────────────────────────────────────────────── -->
 <!-- API client: sets up window.Api with all endpoint helpers -->
-<script defer src="js/api.js"></script>
+<script defer src="js/api.js?v=20260408c"></script>
 <!-- App shell: tab switching, Telegram SDK init, showToast -->
-<script defer src="js/app.js"></script>
+<script defer src="js/app.js?v=20260408c"></script>
 <!-- Word translation popup module -->
-<script defer src="js/popup.js"></script>
+<script defer src="js/popup.js?v=20260408c"></script>
 <!-- AI grammar explanation popup module -->
-<script defer src="js/ai_popup.js"></script>
+<script defer src="js/ai_popup.js?v=20260408c"></script>
 <!-- Payment / upgrade modal module -->
-<script defer src="js/payment.js"></script>
+<script defer src="js/payment.js?v=20260408c"></script>
 <!-- Feature modules (each handles one tab's logic) -->
-<script defer src="js/video.js"></script>
-<script defer src="js/reading.js"></script>
-<script defer src="js/vocabulary.js"></script>
-<script defer src="js/speaking.js"></script>
-<script defer src="js/profile.js"></script>
+<script defer src="js/video.js?v=20260408c"></script>
+<script defer src="js/reading.js?v=20260408c"></script>
+<script defer src="js/vocabulary.js?v=20260408c"></script>
+<script defer src="js/speaking.js?v=20260408c"></script>
+<script defer src="js/profile.js?v=20260408c"></script>
 
 </body>
 </html>

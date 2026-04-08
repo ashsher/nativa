@@ -54,6 +54,13 @@ window.Api = (() => {
       try {
         const errBody = await res.json();
         quotaType = errBody.quota_type || 'default';
+        const detail = typeof errBody.detail === 'string' ? errBody.detail : '';
+        if (!errBody.quota_type && detail) {
+          if (detail.includes("AI")) quotaType = 'ai';
+          else if (detail.includes("nutq") || detail.includes("Gaplash")) quotaType = 'speaking';
+          else if (detail.includes("takrorlash")) quotaType = 'srs';
+        }
+        if (detail) showToast(detail, 'error', 4500);
       } catch (_) {}
 
       if (window.Payment) Payment.showUpgradeModal(quotaType);
@@ -66,8 +73,13 @@ window.Api = (() => {
     }
 
     if (!res.ok) {
-      showToast("Server xatosi. Keyinroq urinib ko'ring.", 'error');
-      throw new window.ApiError('HTTP', `HTTP ${res.status}`);
+      let detailMessage = '';
+      try {
+        const errBody = await res.json();
+        if (typeof errBody.detail === 'string') detailMessage = errBody.detail;
+      } catch (_) {}
+      showToast(detailMessage || "Server xatosi. Keyinroq urinib ko'ring.", 'error', 4500);
+      throw new window.ApiError('HTTP', `HTTP ${res.status}${detailMessage ? `: ${detailMessage}` : ''}`);
     }
 
     if (res.status === 204) return null;
@@ -120,7 +132,8 @@ window.Api = (() => {
     getReviewWords: () => request('GET', '/vocabulary/review'),
     submitRating: (id, rating) => request('POST', '/vocabulary/review', { vocab_id: id, rating }),
 
-    getMatches: () => request('GET', '/speaking/matches'),
+    getMatches: (languageId = getActiveLanguageId()) =>
+      request('GET', '/speaking/matches?language_id=' + encodeURIComponent(languageId)),
     connectSpeaker: (partnerUserId, languageId = getActiveLanguageId()) =>
       request('POST', '/speaking/connect', { partner_user_id: partnerUserId, language_id: languageId }),
 

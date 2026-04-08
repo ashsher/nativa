@@ -404,6 +404,75 @@ button {
   box-shadow: 0 -8px 35px -25px rgba(15, 23, 42, 0.6);
 }
 
+.popup {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 210;
+  display: block;
+  transform: translateY(0);
+  transition: transform 220ms ease, visibility 220ms ease;
+}
+
+.popup--hidden {
+  transform: translateY(115%);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 205;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 180ms ease;
+}
+
+.popup-backdrop--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 310;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 180ms ease;
+}
+
+.modal--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal__overlay,
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.modal__panel,
+.modal-sheet {
+  position: relative;
+  width: min(740px, calc(100% - 16px));
+  max-height: 92dvh;
+  overflow-y: auto;
+  margin: 0 8px max(8px, env(safe-area-inset-bottom));
+  transform: translateY(0);
+  transition: transform 220ms ease;
+}
+
+.modal--hidden .modal__panel {
+  transform: translateY(115%);
+}
+
 .popup__translation,
 .popup__examples,
 .popup__quote,
@@ -497,6 +566,11 @@ button {
   color: #1e3a8a;
   border-radius: 999px;
   box-shadow: 0 14px 30px -22px rgba(15, 23, 42, 0.6);
+}
+
+.toast--hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .toast--visible,
