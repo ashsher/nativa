@@ -83,6 +83,8 @@ services:
       - "8000:8000"
     # Load all environment variables from the root .env file.
     env_file: .env
+    volumes:
+      - ./secrets:/app/secrets:ro
     networks: [nativa_net]
     depends_on:
       # Wait until both DB and Redis pass their health checks before starting.
@@ -117,6 +119,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       # Mount the frontend static files directory (read-only).
       - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     networks: [nativa_net]
     depends_on:
       # Nginx must start after the backend so the upstream is available.
