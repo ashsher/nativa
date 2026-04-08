@@ -7,7 +7,7 @@
   <!-- Viewport: sets mobile viewport width and disables user scaling for app-like feel -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <!-- theme-color: tells Android Chrome/Telegram to paint the status bar in the app's bg colour -->
-  <meta name="theme-color" content="#0D0F14" />
+  <meta name="theme-color" content="#f8fafc" />
 
   <!-- Telegram Mini-App SDK: must be loaded synchronously (no defer/async)
        so that window.Telegram.WebApp is available immediately on parse -->
@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="css/speaking.css" />     <!-- speaking partner styles -->
   <link rel="stylesheet" href="css/profile.css" />      <!-- profile form styles -->
   <link rel="stylesheet" href="css/animations.css" />   <!-- keyframes and motion utilities -->
+  <link rel="stylesheet" href="css/theme.css" />        <!-- final visual theme overrides -->
 
   <title>Nativa</title>
 </head>
@@ -48,9 +49,9 @@
          Using inline SVG avoids an extra HTTP request and allows CSS colour control -->
     <svg class="app-header__logo" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Nativa logotipi">
       <!-- Background rounded square in muted accent colour -->
-      <rect width="32" height="32" rx="8" fill="rgba(43,127,255,0.15)"/>
+      <rect width="32" height="32" rx="8" fill="rgba(37,99,235,0.14)"/>
       <!-- "N" lettermark path drawn in brand blue -->
-      <path d="M8 24V8h3.2l8 10.4V8H22v16h-3.2L10.8 13.6V24H8Z" fill="#2B7FFF"/>
+      <path d="M8 24V8h3.2l8 10.4V8H22v16h-3.2L10.8 13.6V24H8Z" fill="#2563eb"/>
     </svg>
     <!-- #page-title: updated by switchTab() in app.js to reflect the active section -->
     <h1 id="page-title" class="app-header__title">Video</h1>
