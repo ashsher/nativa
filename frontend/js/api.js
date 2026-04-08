@@ -68,8 +68,13 @@ window.Api = (() => {
     }
 
     if (res.status === 401) {
-      showToast("Sessiya tugadi. Qayta kiring.", 'error');
-      throw new window.ApiError('AUTH', 'Autentifikatsiya xatosi');
+      let detailMessage = '';
+      try {
+        const errBody = await res.json();
+        if (typeof errBody.detail === 'string') detailMessage = errBody.detail;
+      } catch (_) {}
+      showToast(detailMessage || "Sessiya tugadi. Qayta kiring.", 'error', 4500);
+      throw new window.ApiError('AUTH', detailMessage || 'Autentifikatsiya xatosi');
     }
 
     if (!res.ok) {

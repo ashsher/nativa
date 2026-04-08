@@ -200,16 +200,21 @@ window.showToast = function showToast(message, type = 'default', duration = 3000
  * showAuthFailure â€” replace the app content with an authentication error message.
  * Called when validateSession() fails so the user gets a clear explanation.
  */
-function showAuthFailure() {
+function showAuthFailure(message = "Ilovani Telegram orqali oching.") {
   // Replace the entire app markup with a minimal error screen.
   const app = document.getElementById('app');
   if (app) {
     app.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:2rem;text-align:center;">
         <h2 style="color:var(--color-danger);margin-bottom:1rem;">Kirish xatosi</h2>
-        <p style="color:var(--color-text-secondary);">Ilovani Telegram orqali oching.</p>
+        <p style="color:var(--color-text-secondary);max-width:320px;">${message}</p>
+        <button id="retry-startup-btn" class="btn btn--primary" style="margin-top:1rem;">Qayta urinish</button>
       </div>
     `;
+    const retry = document.getElementById('retry-startup-btn');
+    if (retry) {
+      retry.addEventListener('click', () => window.location.reload());
+    }
   }
 }
 
@@ -220,7 +225,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Bail out if the SDK is not present (opened outside Telegram, e.g. in a browser).
   if (!twa) {
-    showAuthFailure();
+    showAuthFailure("Telegram WebApp SDK topilmadi. Iltimos, bot ichidagi Mini App tugmasi orqali oching.");
+    return;
+  }
+
+  // In rare cases Telegram object exists but initData is empty (opened as plain link).
+  if (!twa.initData) {
+    showAuthFailure("Sessiya ma'lumoti kelmadi. Bot menyusidagi Mini App tugmasi orqali oching.");
     return;
   }
 
@@ -245,8 +256,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // On success, the backend returns the full user object.
     window.currentUser = await Api.validateSession(window.rawInitData);
   } catch (e) {
-    // Authentication failed — show error screen and stop initialisation.
-    showAuthFailure();
+    // Authentication failed or backend startup error.
+    console.error('Startup validation failed:', e);
+    if (e && e.code === 'AUTH') {
+      showAuthFailure((e && e.message) || "Telegram sessiyasi tasdiqlanmadi. Bot token/domain sozlamalarini tekshiring va qayta oching.");
+    } else {
+      showAuthFailure("Server bilan bog'lanishda xatolik. Bir necha soniyadan keyin qayta urinib ko'ring.");
+    }
     return;
   }
 
