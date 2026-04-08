@@ -97,11 +97,15 @@ async def add_word(
     user = await _get_user(request, db)
 
     # Enrich the card with pronunciation URL via translation service.
-    # If TTS fails we still create the card — pronunciation_url stays null.
-    translation_data = await translation_service.translate_word(
-        word=payload.word,
-        lang_code="en",  # Default; caller can specify a different language.
-    )
+    # If translation/TTS fails we still create the card - pronunciation_url stays null.
+    translation_data = {}
+    try:
+        translation_data = await translation_service.translate_word(
+            word=payload.word,
+            lang_code="en",  # Default; caller can specify a different language.
+        )
+    except Exception:
+        translation_data = {}
 
     card = UserVocabulary(
         user_id=user.user_id,

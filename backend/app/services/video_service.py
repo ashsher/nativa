@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from youtube_transcript_api import (
     NoTranscriptFound,
@@ -21,6 +22,7 @@ from youtube_transcript_api import (
 )
 
 from app.config import settings
+from app.models.language import Language
 from app.models.sessions import VideoSession
 from app.utils.tokeniser import tokenise_text
 
@@ -87,6 +89,64 @@ async def _fetch_video_metadata(video_id: str) -> Dict[str, Any]:
         return {"title": None, "duration_seconds": None}
 
 
+def _normalise_transcript_items(items: list[Any]) -> list[dict[str, Any]]:
+    """
+    Convert transcript items to a consistent dict format.
+    """
+    normalised: list[dict[str, Any]] = []
+    for item in items:
+        if isinstance(item, dict):
+            normalised.append(
+                {
+                    "text": item.get("text", ""),
+                    "start": float(item.get("start", 0.0)),
+                    "duration": float(item.get("duration", 0.0)),
+                }
+            )
+            continue
+
+        normalised.append(
+            {
+                "text": getattr(item, "text", "") or "",
+                "start": float(getattr(item, "start", 0.0) or 0.0),
+                "duration": float(getattr(item, "duration", 0.0) or 0.0),
+            }
+        )
+    return normalised
+
+
+def _fetch_best_available_transcript(
+    video_id: str,
+    preferred_lang_codes: list[str],
+) -> list[dict[str, Any]]:
+    """
+    Fetch transcript with robust fallback order:
+      1) preferred manual transcript,
+      2) preferred generated transcript,
+      3) any available transcript.
+    """
+    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
+    for finder in (
+        transcript_list.find_transcript,
+        transcript_list.find_generated_transcript,
+    ):
+        try:
+            transcript = finder(preferred_lang_codes)
+            return _normalise_transcript_items(transcript.fetch())
+        except Exception:
+            pass
+
+    # Final fallback: first available transcript in any language.
+    for transcript in transcript_list:
+        try:
+            return _normalise_transcript_items(transcript.fetch())
+        except Exception:
+            continue
+
+    return []
+
+
 def _parse_iso8601_duration(duration: str) -> Optional[int]:
     """
     Convert an ISO 8601 duration string to total seconds.
@@ -133,14 +193,24 @@ async def process_video(
     # --- Step 1: Validate URL and extract video ID ---
     video_id = _extract_video_id(url)
 
-    # --- Step 2: Fetch timed subtitles ---
+    # --- Step 2: Resolve preferred language code for subtitle search ---
+    lang_result = await db.execute(
+        select(Language.code).where(Language.language_id == language_id)
+    )
+    preferred_code = lang_result.scalar_one_or_none() or "en"
+
+    preferred_langs = [preferred_code, "en", "en-US", "en-GB", "ru", "uz"]
+    # Keep order while removing duplicates.
+    preferred_langs = list(dict.fromkeys(preferred_langs))
+
+    # --- Step 3: Fetch timed subtitles ---
     # YouTubeTranscriptApi is synchronous; run in default thread pool.
     import asyncio
 
     try:
         transcript_list = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: YouTubeTranscriptApi.get_transcript(video_id),
+            lambda: _fetch_best_available_transcript(video_id, preferred_langs),
         )
     except TranscriptsDisabled:
         raise HTTPException(
@@ -158,7 +228,13 @@ async def process_video(
             detail=f"YouTube API xatosi: {exc}",
         )
 
-    # --- Step 3: Tokenise each subtitle segment ---
+    if not transcript_list:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Bu video uchun subtitrlar topilmadi yoki o'qib bo'lmadi.",
+        )
+
+    # --- Step 4: Tokenise each subtitle segment ---
     segments: List[Dict[str, Any]] = []
     for entry in transcript_list:
         tokens = tokenise_text(entry["text"])
@@ -171,10 +247,10 @@ async def process_video(
             }
         )
 
-    # --- Step 4: Fetch video metadata ---
+    # --- Step 5: Fetch video metadata ---
     metadata = await _fetch_video_metadata(video_id)
 
-    # --- Step 5: Persist VideoSession to the database ---
+    # --- Step 6: Persist VideoSession to the database ---
     session = VideoSession(
         user_id=user_id,
         language_id=language_id,
@@ -186,7 +262,7 @@ async def process_video(
     db.add(session)
     await db.flush()  # Populate session_id before returning.
 
-    # --- Step 6: Return structured payload ---
+    # --- Step 7: Return structured payload ---
     return {
         "session_id": session.session_id,
         "youtube_video_id": video_id,

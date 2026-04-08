@@ -22,7 +22,57 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.language import Language
 from app.models.user import User
+from app.models.user import UserLanguage
+
+
+async def _ensure_default_language(db: AsyncSession) -> Language:
+    """
+    Ensure at least one active default language exists and return it.
+
+    Uses English ("en") as the bootstrap language because the current app
+    defaults most processing pipelines to English content.
+    """
+    result = await db.execute(select(Language).where(Language.code == "en"))
+    language = result.scalar_one_or_none()
+    if language is not None:
+        return language
+
+    language = Language(
+        code="en",
+        name_en="English",
+        name_uz="Ingliz tili",
+        is_active=True,
+    )
+    db.add(language)
+    await db.flush()
+    return language
+
+
+async def _ensure_user_language(db: AsyncSession, user: User) -> None:
+    """
+    Ensure user has at least one active language enrollment.
+    """
+    result = await db.execute(
+        select(UserLanguage).where(
+            UserLanguage.user_id == user.user_id,
+            UserLanguage.is_active == True,  # noqa: E712
+        )
+    )
+    active = result.scalar_one_or_none()
+    if active is not None:
+        return
+
+    default_language = await _ensure_default_language(db)
+    db.add(
+        UserLanguage(
+            user_id=user.user_id,
+            language_id=default_language.language_id,
+            is_active=True,
+        )
+    )
+    await db.flush()
 
 
 # ---------------------------------------------------------------------------
@@ -153,5 +203,8 @@ async def upsert_user(db: AsyncSession, telegram_user: Dict[str, Any]) -> User:
         # payment_service when a subscription expires.
         if telegram_user.get("is_premium"):
             user.is_premium = True
+
+    # Ensure every authenticated user has at least one active learning language.
+    await _ensure_user_language(db, user)
 
     return user
