@@ -1,0 +1,142 @@
+/* ============================================================
+   animations.css — All 12 Part 2 keyframe animations and
+   their associated utility classes for the Nativa Mini-App.
+   ============================================================ */
+
+/* 1. App load fade-in
+   Fades the entire #app from invisible to visible on first load,
+   giving a smooth entry instead of a jarring paint flash. */
+@keyframes appFadeIn { from { opacity: 0 } to { opacity: 1 } }
+.app--loaded { animation: appFadeIn 300ms ease forwards; }
+
+/* 2. Popup slide-up from bottom with spring easing
+   Slides the word-translation popup up from off-screen (below the viewport)
+   to its natural position. The spring easing (1.56 overshoot) gives
+   a bouncy, native-feeling motion on iOS/Android. */
+.popup { transform: translateY(100%); transition: transform 280ms cubic-bezier(0.34,1.56,0.64,1); }
+/* translateY(0) = popup is fully visible at its normal position */
+.popup--visible { transform: translateY(0); }
+
+/* 3. Flashcard 3D flip
+   Creates a card flip effect by rotating the .card element 180° on the Y
+   axis. preserve-3d ensures both faces render in 3D space simultaneously.
+   perspective: 1000px sets the depth of the 3D scene. */
+.card { transform-style: preserve-3d; perspective: 1000px; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); }
+/* Adding .card--flipped rotates to show the back face */
+.card--flipped { transform: rotateY(180deg); }
+/* Both faces are positioned absolutely to occupy the same space */
+.card__front, .card__back { backface-visibility: hidden; position: absolute; inset: 0; }
+/* Back face starts pre-rotated so it appears correctly after the flip */
+.card__back { transform: rotateY(180deg); }
+
+/* 4. Loading skeleton shimmer
+   Creates a sweeping highlight that moves from left to right across
+   a placeholder element to signal that content is loading.
+   background-size: 200% allows the gradient to travel fully across. */
+@keyframes shimmer { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+.skeleton {
+  background: linear-gradient(90deg, var(--color-bg-elevated) 25%, var(--color-bg-surface) 50%, var(--color-bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* 5. Button press feedback
+   Gives a tactile "push down" feel when the user taps a button or word token.
+   The 80ms transition is intentionally fast for immediacy. */
+.btn:active, .word-token:active { transform: scale(0.96); transition: transform 80ms; }
+
+/* 6. Toast slide-down from top
+   Slides the toast notification down from above the viewport so it appears
+   to drop in from the status bar area. */
+@keyframes toastIn { from { transform: translateY(-60px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.toast--visible { animation: toastIn 220ms ease forwards; }
+
+/* 7. Active subtitle segment pulse
+   Pulses the left-border colour of the currently playing subtitle segment
+   between the primary and hover accent colours, drawing the user's eye
+   to the active position in the transcript. */
+@keyframes subtitlePulse {
+  0%,100% { border-left-color: var(--color-accent) }
+  50%      { border-left-color: var(--color-accent-hover) }
+}
+.segment--active {
+  border-left: 3px solid var(--color-accent);
+  animation: subtitlePulse 1.5s ease infinite;
+  padding-left: var(--space-2);
+}
+
+/* 8. Word save confirmation pop
+   Briefly scales the Save button up by 8% when the word is saved,
+   confirming the action with a satisfying micro-animation.
+   background overrides to success green via !important. */
+@keyframes savePop {
+  0%   { transform: scale(1) }
+  50%  { transform: scale(1.08) }
+  100% { transform: scale(1) }
+}
+.btn--saved { animation: savePop 300ms ease; background: var(--color-success) !important; }
+
+/* 9. Quota exceeded shake
+   Shakes an element horizontally when the user hits a quota limit,
+   providing a clear "no" signal analogous to a wrong-password input shake. */
+@keyframes shake {
+  0%,100% { transform: translateX(0) }
+  20%     { transform: translateX(-6px) }
+  40%     { transform: translateX(6px) }
+  60%     { transform: translateX(-4px) }
+  80%     { transform: translateX(4px) }
+}
+.shake { animation: shake 400ms ease; }
+
+/* 10. Word token underline on hover
+   Draws a 1px accent-coloured underline under clickable word tokens
+   using a pseudo-element that expands from width:0 to width:100%
+   on hover, signalling interactivity without cluttering the text. */
+.word-token { position: relative; cursor: pointer; }
+.word-token::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-accent);
+  transition: width var(--transition-fast);
+}
+.word-token:hover::after { width: 100%; }
+
+/* 11. Rating buttons staggered entrance after card flip
+   Each of the four rating buttons fades and slides in from 12px below
+   with a 60ms delay between each one, creating a cascading entrance
+   that draws the eye across the options in order. */
+@keyframes ratingIn {
+  from { opacity: 0; transform: translateY(12px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+.rating-btn { animation: ratingIn 200ms ease both; }
+.rating-btn:nth-child(1) { animation-delay: 0ms }
+.rating-btn:nth-child(2) { animation-delay: 60ms }
+.rating-btn:nth-child(3) { animation-delay: 120ms }
+.rating-btn:nth-child(4) { animation-delay: 180ms }
+
+/* 12. Tab panel directional slide
+   When switching tabs, the incoming panel slides in from the right (forward
+   navigation) or from the left (backward navigation), mirroring the mental
+   model of a horizontal content stack. */
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes slideInLeft  { from { transform: translateX(-100%); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+.tab-panel--enter-right { animation: slideInRight 220ms cubic-bezier(0.4,0,0.2,1) forwards; }
+.tab-panel--enter-left  { animation: slideInLeft  220ms cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* Reduced motion override
+   Respects the user's OS-level "reduce motion" accessibility preference
+   by collapsing all animation and transition durations to near-zero,
+   ensuring no visual motion occurs for users who are sensitive to it. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

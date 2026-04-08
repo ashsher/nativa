@@ -1,0 +1,103 @@
+/**
+ * reset.css
+ * Minimal, opinionated CSS reset.
+ * Applied before any other styles to normalise browser defaults.
+ */
+
+/* ─── Box Model ──────────────────────────────────────────────────────────────
+ * Make every element account for padding and border in its stated width/height.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ─── Root Defaults ──────────────────────────────────────────────────────────
+ * Remove UA default margins and padding; set smooth scrolling.
+ */
+html {
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+  /* Prevent font-size inflation on mobile orientation change */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Block Elements ─────────────────────────────────────────────────────────
+ * Strip margins from common structural elements.
+ */
+h1, h2, h3, h4, h5, h6,
+p, blockquote, figure, pre,
+dl, dd, ol, ul, fieldset, legend,
+details, summary {
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Lists ──────────────────────────────────────────────────────────────────
+ * Remove bullets/numbers; preserve semantic markup.
+ */
+ol, ul {
+  list-style: none;
+}
+
+/* ─── Media ──────────────────────────────────────────────────────────────────
+ * Prevent images and media from overflowing their containers.
+ */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ─── Form Elements ──────────────────────────────────────────────────────────
+ * Inherit typography from the document so inputs look consistent.
+ */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* Remove default button cursor weirdness */
+button {
+  cursor: pointer;
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────────────────
+ * Collapse borders for cleaner table layouts.
+ */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* ─── Anchor Tags ────────────────────────────────────────────────────────────
+ * Remove default underline; colour is set per-component.
+ */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ─── Hidden Attribute ───────────────────────────────────────────────────────
+ * Ensure [hidden] always hides the element (some browsers ignore it on flex).
+ */
+[hidden] {
+  display: none !important;
+}

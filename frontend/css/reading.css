@@ -1,0 +1,142 @@
+/**
+ * reading.css
+ * Styles for the Reading learning mode.
+ * Depends on: variables.css, components.css
+ * Note: .word-token is defined in video.css and shared here.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   READING INPUT FORM
+   Shown before content is loaded — user pastes a URL or raw text.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.reading-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-md);
+}
+
+/** Form heading */
+.reading-input-form__title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/** Helper text below the title */
+.reading-input-form__sub {
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  margin-top: calc(var(--space-xs) * -1);
+}
+
+/** "or" separator between URL input and text area */
+.reading-input-form__separator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+
+.reading-input-form__separator::before,
+.reading-input-form__separator::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ARTICLE CONTAINER
+   Wrapper for the processed, tokenised article content.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.article-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/** Article header with title and source badge */
+.article-header {
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.article-header__title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+  line-height: 1.35;
+}
+
+/** Source URL / domain label */
+.article-header__source {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+/** Reading progress bar at the top of the article */
+.reading-progress {
+  height: 2px;
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.reading-progress__fill {
+  height: 100%;
+  background-color: var(--color-accent);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PARAGRAPH
+   Each processed paragraph from the article.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.paragraph {
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--color-text-primary);
+  /* Wrap long words (URLs, no-break sequences) */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/** Paragraph that the user long-pressed for AI explanation */
+.paragraph.is-selected {
+  background-color: rgba(0, 229, 160, 0.05);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs);
+  margin-inline: calc(var(--space-xs) * -1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   READING STATS BAR
+   Compact row showing estimated read time and word count.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.reading-stats {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.reading-stats__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

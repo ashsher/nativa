@@ -1,0 +1,159 @@
+/**
+ * base.css
+ * Global base styles applied to the entire application.
+ * Depends on: variables.css, reset.css
+ */
+
+/* ─── Google Fonts ───────────────────────────────────────────────────────────
+ * Syne (display) and DM Sans (body) loaded from Google Fonts CDN.
+ * Loaded here so all subsequent CSS can reference them immediately.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+/* ─── Body ───────────────────────────────────────────────────────────────────
+ * Sets the dark background, body typeface, and default text colour.
+ */
+body {
+  background-color: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  /* Prevent horizontal overflow in mobile WebView */
+  overflow-x: hidden;
+  /* Smooth font rendering on macOS / iOS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Headings ───────────────────────────────────────────────────────────────
+ * All headings use the editorial Syne typeface.
+ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.1rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; }
+
+/* ─── Paragraphs ─────────────────────────────────────────────────────────────
+ * Comfortable reading rhythm.
+ */
+p {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+/* ─── Scrollbar Styling ──────────────────────────────────────────────────────
+ * Slim, dark scrollbar that fits the editorial aesthetic.
+ * Works in Chromium-based WebViews (Telegram Android / Desktop).
+ */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-elevated) var(--color-bg);
+}
+
+/* ─── Container ──────────────────────────────────────────────────────────────
+ * Max-width wrapper to keep content readable on wide screens.
+ * Telegram Mini Apps are typically 390–430 px wide, but we cap for tablets.
+ */
+.container {
+  width: 100%;
+  max-width: 600px;
+  margin-inline: auto;
+  padding-inline: var(--space-md);
+}
+
+/* ─── View Sections ──────────────────────────────────────────────────────────
+ * Each "tab view" fills the available space above the bottom tab bar.
+ */
+.view {
+  display: none;
+  flex-direction: column;
+  height: calc(100dvh - 56px); /* 56px = tab bar height */
+  overflow-y: auto;
+  padding-bottom: var(--space-md);
+}
+
+.view.is-active {
+  display: flex;
+}
+
+/* ─── Loading Skeleton ───────────────────────────────────────────────────────
+ * Placeholder shimmer shown while content is loading.
+ * Apply .skeleton to any element; size it with width/height inline styles.
+ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-elevated) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--radius-sm);
+  color: transparent !important;
+  pointer-events: none;
+}
+
+/* ─── Section Header ─────────────────────────────────────────────────────────
+ * Consistent section titles used in every view.
+ */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+}
+
+/* ─── Utility: visually hidden (accessible) ──────────────────────────────────
+ * Hides element visually but keeps it for screen readers.
+ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Divider ────────────────────────────────────────────────────────────────
+ * Subtle horizontal rule.
+ */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin-block: var(--space-md);
+}

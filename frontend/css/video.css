@@ -1,0 +1,193 @@
+/**
+ * video.css
+ * Styles for the Video learning mode.
+ * Depends on: variables.css, components.css
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIDEO URL INPUT FORM
+   Shown before a video is loaded — user pastes a YouTube URL.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.video-url-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-md);
+}
+
+/** Form heading */
+.video-url-form__title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/** Descriptive subtitle */
+.video-url-form__sub {
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  margin-top: calc(var(--space-xs) * -1);
+}
+
+/** Row with input + submit button side by side */
+.video-url-form__row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.video-url-form__row .input {
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIDEO CONTAINER
+   Responsive 16:9 YouTube iframe embed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.video-container {
+  position: relative;
+  width: 100%;
+  /* Maintain 16:9 aspect ratio via padding trick */
+  padding-bottom: 56.25%;
+  background-color: #000;
+  border-radius: 0; /* Full-width on mobile */
+  overflow: hidden;
+}
+
+/** The actual iframe fills the container absolutely */
+.video-container iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUBTITLE PANEL
+   Scrollable area below the video showing all subtitle segments.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.subtitle-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  /* Smooth scroll so the active segment stays visible */
+  scroll-behavior: smooth;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUBTITLE SEGMENT
+   A single timed cue (start–end timestamp + text tokens).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.subtitle-segment {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+  line-height: 1.9;
+}
+
+/** Timestamp label above each segment */
+.subtitle-segment__time {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-family: var(--font-body);
+}
+
+/** Currently playing segment — highlighted */
+.subtitle-highlight {
+  background-color: rgba(0, 229, 160, 0.07);
+  border-left-color: var(--color-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORD TOKEN
+   Individual clickable word within a subtitle or article.
+   Shared pattern between video.css and reading.css.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.word-token {
+  display: inline;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0 1px;
+  /* Underline is revealed on hover/active using a transition */
+  border-bottom: 1.5px solid transparent;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+  /* Prevent text-decoration inheritance from parent */
+  text-decoration: none;
+  /* Ensure long-press can be detected without triggering text selection */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/** Hover — reveal accent underline */
+.word-token:hover {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/** Active / pressed state */
+.word-token:active {
+  background-color: var(--color-accent-dim);
+  border-radius: 3px;
+}
+
+/** Word that has already been added to the deck */
+.word-token.is-saved {
+  color: var(--color-accent);
+  opacity: 0.75;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANGUAGE SELECTOR
+   Small pill at the top of the video view to pick target language.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lang-selector {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  overflow-x: auto;
+  /* Hide scrollbar on the language strip */
+  scrollbar-width: none;
+}
+
+.lang-selector::-webkit-scrollbar {
+  display: none;
+}
+
+.lang-chip {
+  flex-shrink: 0;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.lang-chip.is-active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: var(--color-accent-dim);
+}

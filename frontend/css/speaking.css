@@ -1,0 +1,239 @@
+/**
+ * speaking.css
+ * Styles for the Speaking Partner mode.
+ * Depends on: variables.css, components.css
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PARTNER LIST
+   Scrollable grid/list of potential conversation partners.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.partner-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PARTNER CARD
+   Profile card showing avatar, name, languages, and interests.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.partner-card {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.partner-card:hover {
+  border-color: var(--color-border-active);
+  background-color: var(--color-surface-elevated);
+}
+
+/** Round avatar image */
+.partner-card__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: var(--color-surface-elevated);
+  /* Accent ring on premium users */
+  border: 2px solid transparent;
+}
+
+.partner-card__avatar.is-premium {
+  border-color: var(--color-accent);
+}
+
+/** Fallback initials avatar when no photo */
+.partner-card__avatar-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: var(--color-surface-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/** Text content column */
+.partner-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/** User's display name */
+.partner-card__name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/** Language learning info (e.g. "EN → DE") */
+.partner-card__langs {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/** Row of interest chips */
+.partner-card__interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--space-xs);
+}
+
+/** Similarity score badge */
+.partner-card__score {
+  font-size: 0.72rem;
+  color: var(--color-accent);
+  background-color: var(--color-accent-dim);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  margin-top: var(--space-xs);
+  display: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTEREST CHIP
+   Small tag showing a shared interest topic.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.interest-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.55rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+/** Highlighted when this chip matches the user's own interests */
+.interest-chip.is-match {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: var(--color-accent-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONNECT BUTTON
+   CTA button on the partner card.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.connect-btn {
+  align-self: flex-start;
+  flex-shrink: 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-accent);
+  color: #000;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.connect-btn:hover {
+  background-color: #00ffb3;
+  box-shadow: 0 0 14px rgba(0, 229, 160, 0.3);
+}
+
+.connect-btn:active {
+  transform: scale(0.95);
+}
+
+/** Button state when a request has been sent */
+.connect-btn.is-pending {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-secondary);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MATCH STATUS BADGE
+   Shows the current connection state.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.match-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.match-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.match-status.is-connected {
+  color: var(--color-accent);
+  background-color: var(--color-accent-dim);
+}
+
+.match-status.is-pending {
+  color: #FFB347;
+  background-color: rgba(255, 179, 71, 0.15);
+}
+
+.match-status.is-none {
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-elevated);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPEAKING FILTER BAR
+   Language filter chips at top of the speaking view.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.speaking-filter-bar {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.speaking-filter-bar::-webkit-scrollbar {
+  display: none;
+}

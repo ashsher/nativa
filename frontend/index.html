@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<!-- lang="uz" — Uzbek is the primary UI language for this Mini-App -->
+<html lang="uz">
+<head>
+  <!-- Required meta charset for correct UTF-8 rendering of Uzbek/Cyrillic characters -->
+  <meta charset="UTF-8" />
+  <!-- Viewport: sets mobile viewport width and disables user scaling for app-like feel -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- theme-color: tells Android Chrome/Telegram to paint the status bar in the app's bg colour -->
+  <meta name="theme-color" content="#0D0F14" />
+
+  <!-- Telegram Mini-App SDK: must be loaded synchronously (no defer/async)
+       so that window.Telegram.WebApp is available immediately on parse -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Preconnect to Google Fonts CDN for faster font negotiation -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Load Syne (display/heading font) and DM Sans (body/UI font) from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- CSS load order matters: variables first so all tokens are defined before they are used -->
+  <link rel="stylesheet" href="css/variables.css" />   <!-- design tokens -->
+  <link rel="stylesheet" href="css/reset.css" />        <!-- browser normalisation -->
+  <link rel="stylesheet" href="css/base.css" />         <!-- global element styles -->
+  <link rel="stylesheet" href="css/components.css" />   <!-- shared components: btn, badge, card, toast, popup -->
+  <link rel="stylesheet" href="css/video.css" />        <!-- video mode specific styles -->
+  <link rel="stylesheet" href="css/reading.css" />      <!-- reading mode specific styles -->
+  <link rel="stylesheet" href="css/vocabulary.css" />   <!-- vocabulary / SRS styles -->
+  <link rel="stylesheet" href="css/speaking.css" />     <!-- speaking partner styles -->
+  <link rel="stylesheet" href="css/profile.css" />      <!-- profile form styles -->
+  <link rel="stylesheet" href="css/animations.css" />   <!-- keyframes and motion utilities -->
+
+  <title>Nativa</title>
+</head>
+<body>
+
+<!-- ============================================================
+     #app — Root application container
+     app.js adds .app--loaded after init to trigger the fade-in.
+     ============================================================ -->
+<div id="app">
+
+  <!-- ── APP HEADER ─────────────────────────────────────────── -->
+  <!-- Sticky header: shows the "N" logo mark and the current tab title -->
+  <header class="app-header">
+    <!-- Inline SVG logo: the "N" lettermark in brand blue (#2B7FFF)
+         Using inline SVG avoids an extra HTTP request and allows CSS colour control -->
+    <svg class="app-header__logo" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Nativa logotipi">
+      <!-- Background rounded square in muted accent colour -->
+      <rect width="32" height="32" rx="8" fill="rgba(43,127,255,0.15)"/>
+      <!-- "N" lettermark path drawn in brand blue -->
+      <path d="M8 24V8h3.2l8 10.4V8H22v16h-3.2L10.8 13.6V24H8Z" fill="#2B7FFF"/>
+    </svg>
+    <!-- #page-title: updated by switchTab() in app.js to reflect the active section -->
+    <h1 id="page-title" class="app-header__title">Video</h1>
+  </header>
+
+  <!-- ── MAIN CONTENT AREA ───────────────────────────────────── -->
+  <!-- Tab panels are siblings; only one has .tab-panel--active at a time -->
+  <main id="tab-content">
+
+    <!-- ══════════════════════════════════════════════════════
+         VIDEO PANEL
+         Default active panel. Shows URL input first;
+         once a video is processed the player state is revealed.
+         ══════════════════════════════════════════════════════ -->
+    <section id="panel-video" class="tab-panel tab-panel--active">
+
+      <!-- URL input state: visible before a video is loaded -->
+      <div class="video-input-state">
+        <h2>YouTube Video</h2>
+        <p>YouTube video havolasini joylashtiring</p>
+        <!-- Input group: URL field + submit button side by side -->
+        <div class="input-group">
+          <input
+            type="url"
+            id="video-url-input"
+            placeholder="https://youtube.com/watch?v=..."
+            autocomplete="off"
+          />
+          <!-- video.js listens for click on this button to call submitVideoURL() -->
+          <button class="btn btn--primary" id="video-submit-btn">Boshlash</button>
+        </div>
+      </div>
+
+      <!-- Player state: hidden until a video has been processed by the backend -->
+      <div class="video-player-state" id="video-player-state" style="display:none">
+        <!-- YouTube IFrame API mounts the <iframe> inside this container -->
+        <div id="youtube-player-container"></div>
+        <!-- Auto-pause toggle: video.js wires this button -->
+        <div class="subtitle-controls">
+          <button class="btn btn--ghost" id="autopause-toggle">Avtopauza: O'ch</button>
+        </div>
+        <!-- Subtitle panel: populated by renderSubtitles() in video.js -->
+        <div id="subtitle-panel" class="subtitle-panel"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         READING PANEL
+         Two-mode input (URL or paste text) plus the rendered article.
+         ══════════════════════════════════════════════════════ -->
+    <section id="panel-reading" class="tab-panel">
+
+      <!-- Input state: shown before an article is loaded -->
+      <div class="reading-input-state">
+        <h2>Maqola O'qish</h2>
+
+        <!-- Pill toggle: switches between URL input and raw text input -->
+        <div class="pill-toggle">
+          <!-- reading.js toggles pill-toggle__btn--active on these buttons -->
+          <button class="pill-toggle__btn pill-toggle__btn--active" id="reading-tab-url"  data-mode="url">Havola</button>
+          <button class="pill-toggle__btn"                          id="reading-tab-text" data-mode="text">Matn</button>
+        </div>
+
+        <!-- URL input group (default visible) -->
+        <div id="reading-url-input-group">
+          <input type="url" id="reading-url-input" placeholder="https://..." autocomplete="off" />
+        </div>
+
+        <!-- Text paste input group (hidden until "Matn" pill is selected) -->
+        <div id="reading-text-input-group" style="display:none">
+          <textarea id="reading-text-input" rows="6" placeholder="Matnni bu yerga joylashtiring..."></textarea>
+        </div>
+
+        <!-- Submit button: reading.js calls submitReading() on click -->
+        <button class="btn btn--primary" id="reading-submit-btn">O'qishni boshlash</button>
+      </div>
+
+      <!-- Article state: hidden until article is processed -->
+      <div id="reading-article-state" class="reading-article-state" style="display:none">
+        <!-- Header row: word count stats + back button -->
+        <div class="reading-header">
+          <!-- #reading-stats filled with "{word_count} so'z | ~N daqiqa" by reading.js -->
+          <span id="reading-stats"></span>
+          <!-- Back button returns to the input state -->
+          <button class="btn btn--ghost btn--sm" id="reading-back-btn">← Orqaga</button>
+        </div>
+        <!-- Article body: paragraphs with clickable word tokens injected by reading.js -->
+        <div id="article-container" class="article-container"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         VOCABULARY PANEL
+         Three internal states: overview → review session → complete.
+         ══════════════════════════════════════════════════════ -->
+    <section id="panel-vocab" class="tab-panel">
+
+      <!-- ── Overview state ─────────────────────────────────── -->
+      <div id="vocab-overview-state">
+        <div class="vocab-header">
+          <h2>Mening so'zlarim</h2>
+          <div class="vocab-stats">
+            <!-- Total word count badge, updated by vocabulary.js -->
+            <span class="badge" id="vocab-total-badge">0 so'z</span>
+            <!-- Due today count badge (accent colour = urgent) -->
+            <span class="badge badge--accent" id="vocab-due-badge">0 bugun</span>
+          </div>
+        </div>
+
+        <!-- Manual word addition row -->
+        <div class="add-word-row">
+          <input type="text" id="add-word-input" placeholder="Yangi so'z qo'shish..." />
+          <!-- vocabulary.js wires this to addWord() -->
+          <button class="btn btn--secondary" id="add-word-btn">Qo'shish</button>
+        </div>
+
+        <!-- Start review button: disabled when there are no due words -->
+        <button class="btn btn--primary btn--full" id="start-review-btn" disabled>Takrorlashni boshlash</button>
+
+        <!-- Scrollable list of all saved words, rendered by vocabulary.js -->
+        <div id="vocab-list" class="vocab-list"></div>
+      </div>
+
+      <!-- ── Review session state (hidden) ──────────────────── -->
+      <div id="vocab-review-state" style="display:none">
+        <!-- Header: back button + progress bar + counter -->
+        <div class="review-header">
+          <button class="btn btn--ghost btn--sm" id="review-back-btn">← Orqaga</button>
+          <!-- Progress bar track -->
+          <div class="review-progress-bar">
+            <!-- Fill element width is updated by vocabulary.js as cards progress -->
+            <div id="review-progress-fill" class="review-progress-fill"></div>
+          </div>
+          <!-- e.g. "3/12" — reviewed / total -->
+          <span id="review-counter">0/0</span>
+        </div>
+
+        <!-- Flashcard: click to flip; .card--flipped is toggled by vocabulary.js -->
+        <div id="flashcard" class="card">
+          <!-- Front face: shows the target-language word -->
+          <div class="card__front" id="card-front"></div>
+          <!-- Back face: shows the translation and pronunciation -->
+          <div class="card__back" id="card-back"></div>
+        </div>
+
+        <!-- Rating buttons: hidden until the card is flipped -->
+        <div id="rating-buttons" class="rating-buttons" style="display:none">
+          <!-- data-rating maps to SM-2 quality values 0..5 -->
+          <button class="btn rating-btn rating-btn--forgot" data-rating="0">Unutdim</button>
+          <button class="btn rating-btn rating-btn--hard"   data-rating="2">Qiyin</button>
+          <button class="btn rating-btn rating-btn--good"   data-rating="4">Yaxshi</button>
+          <button class="btn rating-btn rating-btn--easy"   data-rating="5">Oson</button>
+        </div>
+
+        <!-- Hint shown before card is flipped -->
+        <p class="flip-hint" id="flip-hint">So'zni ko'rish uchun bosing</p>
+      </div>
+
+      <!-- ── Session complete state (hidden) ─────────────────── -->
+      <div id="vocab-complete-state" style="display:none">
+        <div class="session-complete">
+          <!-- Celebration emoji -->
+          <div class="session-complete__emoji">🎉</div>
+          <h2>Barakalla!</h2>
+          <!-- e.g. "Bugun 8 ta so'z takrorlandi" — filled by vocabulary.js -->
+          <p id="session-complete-stats"></p>
+          <!-- Returns to overview state -->
+          <button class="btn btn--primary btn--full" id="complete-back-btn">Tugash</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SPEAKING PANEL
+         Shows a list of matched speaking partners.
+         ══════════════════════════════════════════════════════ -->
+    <section id="panel-speak" class="tab-panel">
+      <h2>Suhbat sherigi toping</h2>
+      <!-- Partner cards rendered by speaking.js -->
+      <div id="partner-list" class="partner-list"></div>
+      <!-- Empty state: shown when no partners exist and profile is incomplete -->
+      <div id="speak-empty-state" class="empty-state" style="display:none">
+        <p>Profilingizni to'ldiring va suhbat sherigini toping</p>
+        <!-- speaking.js wires this to switchTab('profile') -->
+        <button class="btn btn--primary" id="go-to-profile-btn">Profilni to'ldirish</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         PROFILE PANEL
+         Shows user info and an editable form.
+         ══════════════════════════════════════════════════════ -->
+    <section id="panel-profile" class="tab-panel">
+
+      <!-- Display section: avatar + name (read-only) -->
+      <div class="profile-header">
+        <!-- Avatar: either Telegram photo or coloured initial circle (set by profile.js) -->
+        <div class="profile-avatar" id="profile-avatar"></div>
+        <div class="profile-name">
+          <!-- Full name from Telegram, e.g. "Alisher Navoiy" -->
+          <h2 id="profile-full-name"></h2>
+          <!-- Telegram username, e.g. "@alisher" -->
+          <span id="profile-username" class="text-secondary"></span>
+        </div>
+      </div>
+
+      <!-- Editable profile form -->
+      <form id="profile-form" class="profile-form" novalidate>
+
+        <!-- City input -->
+        <label>Shahar
+          <input type="text" id="profile-city" name="city" placeholder="Toshkent" autocomplete="off" />
+        </label>
+
+        <!-- Country input -->
+        <label>Mamlakat
+          <input type="text" id="profile-country" name="country" placeholder="O'zbekiston" autocomplete="off" />
+        </label>
+
+        <!-- Interests tag chip input -->
+        <label>Qiziqishlar
+          <div class="tag-input-container" id="interests-container">
+            <!-- Chip pills rendered by profile.js renderTagChips() -->
+            <div class="tags" id="interests-tags"></div>
+            <!-- Typing here and pressing Enter or comma adds a chip -->
+            <input type="text" class="tag-input" id="interests-input" placeholder="Enter yoki vergul bilan qo'shing" />
+          </div>
+        </label>
+
+        <!-- Hobbies tag chip input -->
+        <label>Sevimli mashg'ulotlar
+          <div class="tag-input-container" id="hobbies-container">
+            <div class="tags" id="hobbies-tags"></div>
+            <input type="text" class="tag-input" id="hobbies-input" placeholder="Enter yoki vergul bilan qo'shing" />
+          </div>
+        </label>
+
+        <!-- Save profile button: profile.js wires this to submitProfile() -->
+        <button type="submit" class="btn btn--primary btn--full" id="profile-save-btn">Saqlash</button>
+      </form>
+
+      <!-- Premium status section: rendered by profile.js renderPremiumSection() -->
+      <div class="premium-section" id="premium-section"></div>
+    </section>
+
+  </main><!-- /#tab-content -->
+
+  <!-- ── BOTTOM NAVIGATION ─────────────────────────────────────── -->
+  <!-- Fixed bottom nav; app.js wires click handlers via data-tab -->
+  <nav class="bottom-nav" role="navigation">
+
+    <!-- Video tab button (default active) -->
+    <button class="bottom-nav__btn bottom-nav__btn--active" data-tab="video" aria-label="Video">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Play triangle icon -->
+        <polygon points="5,3 19,12 5,21"/>
+      </svg>
+      <span>Video</span>
+    </button>
+
+    <!-- Reading tab button -->
+    <button class="bottom-nav__btn" data-tab="reading" aria-label="O'qish">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Open book icon paths -->
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span>O'qish</span>
+    </button>
+
+    <!-- Vocabulary tab button -->
+    <button class="bottom-nav__btn" data-tab="vocab" aria-label="So'zlar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Star / vocabulary icon -->
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      <span>So'zlar</span>
+    </button>
+
+    <!-- Speaking tab button -->
+    <button class="bottom-nav__btn" data-tab="speak" aria-label="Gaplash">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Chat bubble icon -->
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>Gaplash</span>
+    </button>
+
+    <!-- Profile tab button -->
+    <button class="bottom-nav__btn" data-tab="profile" aria-label="Profil">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Person icon: body + head circle -->
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>Profil</span>
+    </button>
+
+  </nav><!-- /.bottom-nav -->
+
+  <!-- ── WORD TRANSLATION POPUP ─────────────────────────────────
+       Bottom sheet that slides up when a word token is tapped.
+       popup.js controls visibility with popup--hidden / popup--visible.
+       ──────────────────────────────────────────────────────────── -->
+  <div id="word-popup" class="popup popup--hidden" role="dialog" aria-modal="true" aria-label="So'z tarjimasi">
+    <!-- Drag handle visual indicator (non-interactive) -->
+    <div class="popup__handle"></div>
+    <div class="popup__content">
+      <!-- Close button: popup.js hides the sheet on click -->
+      <button class="popup__close-btn" id="popup-close-btn" aria-label="Yopish">✕</button>
+      <!-- Word display area (Syne font via CSS on .popup__word) -->
+      <div id="popup-word" class="popup__word"></div>
+      <!-- Translation in secondary text style -->
+      <div id="popup-translation" class="popup__translation"></div>
+      <!-- Action buttons row -->
+      <div class="popup__actions">
+        <!-- Audio button: plays pronunciation MP3 from TTS service -->
+        <button class="btn btn--ghost popup__audio-btn" id="popup-audio-btn">🔊 Talaffuz</button>
+        <!-- Save button: adds word to vocabulary deck via Api.addWord() -->
+        <button class="btn btn--primary popup__save-btn" id="popup-save-btn">📚 Saqlash</button>
+      </div>
+      <!-- Example sentences rendered by popup.js renderContent() -->
+      <div id="popup-examples" class="popup__examples"></div>
+    </div>
+  </div>
+  <!-- Semi-transparent backdrop; clicking it closes the popup -->
+  <div class="popup-backdrop popup-backdrop--hidden" id="popup-backdrop"></div>
+
+  <!-- ── AI GRAMMAR EXPLANATION POPUP ───────────────────────────
+       Appears after the user selects text and taps "AI so'rang".
+       ai_popup.js controls this with the same popup--hidden pattern.
+       ──────────────────────────────────────────────────────────── -->
+  <div id="ai-popup" class="popup popup--hidden" role="dialog" aria-modal="true" aria-label="Grammatika izohi">
+    <div class="popup__handle"></div>
+    <div class="popup__content">
+      <!-- Close button -->
+      <button class="popup__close-btn" id="ai-popup-close-btn" aria-label="Yopish">✕</button>
+      <!-- Section heading -->
+      <h3 class="popup__title">Grammatika izohi</h3>
+      <!-- The selected text displayed as a block-quote for context -->
+      <blockquote id="ai-popup-quote" class="popup__quote"></blockquote>
+      <!-- Gemini response text; filled by typewriterEffect() in ai_popup.js -->
+      <div id="ai-response" class="ai-response"></div>
+      <!-- Loading spinner: shown while waiting for Gemini API response -->
+      <div id="ai-loading" class="ai-loading" style="display:none">
+        <div class="loader"></div>
+        <p>Gemini javob yozmoqda...</p>
+      </div>
+    </div>
+  </div>
+  <!-- Backdrop for the AI popup -->
+  <div class="popup-backdrop popup-backdrop--hidden" id="ai-popup-backdrop"></div>
+
+  <!-- ── PREMIUM UPGRADE MODAL ───────────────────────────────────
+       Full-screen modal shown when the user hits a quota limit.
+       payment.js controls showUpgradeModal() / hideUpgradeModal().
+       ──────────────────────────────────────────────────────────── -->
+  <div id="upgrade-modal" class="modal modal--hidden" role="dialog" aria-modal="true" aria-label="Premium obuna">
+    <!-- Dark overlay: clicking it dismisses the modal -->
+    <div class="modal__overlay" id="modal-overlay"></div>
+    <div class="modal__panel">
+      <!-- Modal heading -->
+      <h2 class="modal__title">Limitingiz tugadi</h2>
+      <!-- Dynamic quota message set by Payment.showUpgradeModal(type) -->
+      <p id="quota-message" class="modal__subtitle"></p>
+      <!-- Feature comparison table: Free vs Premium -->
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Bepul</th>
+            <th>Premium ⚡</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>10 SRS/kun</td><td>Cheksiz SRS</td></tr>
+          <tr><td>10 AI/kun</td><td>Cheksiz AI</td></tr>
+          <tr><td>5 gaplash/kun</td><td>Cheksiz gaplash</td></tr>
+          <tr><td>30 daq. video</td><td>Har qanday uzunlik</td></tr>
+        </tbody>
+      </table>
+      <!-- Price display -->
+      <p class="modal__price">💳 $2/oy (≈25 000 so'm)</p>
+      <!-- Primary CTA: payment.js calls initiatePayment() -->
+      <button class="btn btn--primary btn--full" id="upgrade-btn">Premium olish ⚡</button>
+      <!-- Dismiss without paying -->
+      <button class="btn btn--ghost btn--full" id="modal-dismiss-btn">Keyinroq</button>
+    </div>
+  </div>
+
+  <!-- ── FLOATING AI BUTTON ──────────────────────────────────────
+       Appears near text selection inside subtitle or article panels.
+       video.js and reading.js show/position this button on selection;
+       clicking it opens the AI grammar popup.
+       ──────────────────────────────────────────────────────────── -->
+  <button id="ai-float-btn" class="ai-float-btn" style="display:none" aria-label="AI grammatika tushuntirishi">
+    🤖 AI so'rang
+  </button>
+
+  <!-- ── TOAST NOTIFICATION ─────────────────────────────────────
+       Global status message shown at the top of the screen.
+       showToast() in app.js toggles toast--hidden / toast--visible.
+       aria-live="polite" announces the message to screen readers.
+       ──────────────────────────────────────────────────────────── -->
+  <div id="toast" class="toast toast--hidden" role="status" aria-live="polite"></div>
+
+</div><!-- /#app -->
+
+<!-- ── JAVASCRIPT ──────────────────────────────────────────────────
+     All scripts are deferred so they execute after the DOM is parsed.
+     Load order matters: api.js must come before app.js (which calls Api.*),
+     and popup/ai_popup/payment before the feature modules that call them.
+     ────────────────────────────────────────────────────────────────── -->
+<!-- API client: sets up window.Api with all endpoint helpers -->
+<script defer src="js/api.js"></script>
+<!-- App shell: tab switching, Telegram SDK init, showToast -->
+<script defer src="js/app.js"></script>
+<!-- Word translation popup module -->
+<script defer src="js/popup.js"></script>
+<!-- AI grammar explanation popup module -->
+<script defer src="js/ai_popup.js"></script>
+<!-- Payment / upgrade modal module -->
+<script defer src="js/payment.js"></script>
+<!-- Feature modules (each handles one tab's logic) -->
+<script defer src="js/video.js"></script>
+<script defer src="js/reading.js"></script>
+<script defer src="js/vocabulary.js"></script>
+<script defer src="js/speaking.js"></script>
+<script defer src="js/profile.js"></script>
+
+</body>
+</html>

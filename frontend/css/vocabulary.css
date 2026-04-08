@@ -1,0 +1,292 @@
+/**
+ * vocabulary.css
+ * Styles for the Vocabulary / SRS (Spaced Repetition) mode.
+ * Depends on: variables.css, components.css
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOCAB LIST
+   Scrollable list of all saved words.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.vocab-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOCAB CARD
+   A single word entry in the vocabulary list.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.vocab-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.vocab-card:hover {
+  border-color: var(--color-border-active);
+  background-color: var(--color-surface-elevated);
+}
+
+/** The word in the target language */
+.vocab-card__word {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+/** Translation below the word */
+.vocab-card__translation {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/** SRS interval badge (e.g. "3 kun" = "3 days") */
+.vocab-card__interval {
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  background-color: var(--color-accent-dim);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/** Delete / action button on the right */
+.vocab-card__action {
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  transition: color var(--transition-fast);
+  padding: var(--space-xs);
+}
+
+.vocab-card__action:hover {
+  color: var(--color-error);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REVIEW HEADER
+   Stats bar at the top of a review session.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-md) 0;
+}
+
+/** "X / Y" progress fraction */
+.review-progress-text {
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/** Thin progress bar below the header */
+.review-progress-bar {
+  height: 3px;
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
+  margin: var(--space-sm) var(--space-md) 0;
+  overflow: hidden;
+}
+
+.review-progress-bar__fill {
+  height: 100%;
+  background-color: var(--color-accent);
+  border-radius: var(--radius-full);
+  transition: width 0.35s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLASHCARD CONTAINER
+   Centred wrapper for the 3D flip card.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flashcard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--space-md);
+  /* perspective is required for 3D transform to be visible */
+  perspective: 1000px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLASHCARD (3D FLIP)
+   Outer element that rotates; inner front/back faces are absolutely placed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flashcard {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 220px;
+  cursor: pointer;
+  /* preserve-3d ensures both faces participate in the 3D space */
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+/** Flipped state — show back face */
+.flashcard.is-flipped {
+  transform: rotateY(180deg);
+}
+
+/** Shared face styles */
+.flashcard-front,
+.flashcard-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  /* backface-visibility hidden hides the face when it's rotated away */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  text-align: center;
+}
+
+/** Front face — shows the word */
+.flashcard-front {
+  /* No additional transform needed — faces the viewer by default */
+}
+
+.flashcard-front__word {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.flashcard-front__context {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/** Tap hint text on front */
+.flashcard-front__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  position: absolute;
+  bottom: var(--space-sm);
+}
+
+/** Back face — shows translation; rotated 180° so it's hidden initially */
+.flashcard-back {
+  transform: rotateY(180deg);
+  border-color: var(--color-border-active);
+  background-color: var(--color-surface-elevated);
+}
+
+.flashcard-back__translation {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+/** Example sentence on back */
+.flashcard-back__example {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SRS RATING BAR
+   Row of 6 buttons (0-5) shown after flipping the card.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.srs-rating-bar {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  width: 100%;
+  max-width: 400px;
+  margin-top: var(--space-md);
+}
+
+/** Individual rating button */
+.srs-rating-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.srs-rating-btn:active {
+  transform: scale(0.93);
+}
+
+/** Rating 0-1: red family (forgot) */
+.srs-rating-btn[data-rating="0"],
+.srs-rating-btn[data-rating="1"] {
+  --_accent: #FF4D4D;
+}
+
+/** Rating 2-3: yellow family (hard) */
+.srs-rating-btn[data-rating="2"],
+.srs-rating-btn[data-rating="3"] {
+  --_accent: #FFB347;
+}
+
+/** Rating 4-5: green family (easy) */
+.srs-rating-btn[data-rating="4"],
+.srs-rating-btn[data-rating="5"] {
+  --_accent: var(--color-accent);
+}
+
+.srs-rating-btn:hover {
+  border-color: var(--_accent);
+  color: var(--_accent);
+  background-color: color-mix(in srgb, var(--_accent) 12%, transparent);
+}
+
+/** Emoji label above the number */
+.srs-rating-btn__emoji {
+  font-size: 1rem;
+}

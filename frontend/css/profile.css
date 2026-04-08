@@ -1,0 +1,263 @@
+/**
+ * profile.css
+ * Styles for the Profile & Settings page.
+ * Depends on: variables.css, components.css
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE HEADER
+   Full-width hero area with avatar, name, and premium badge.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md) var(--space-md);
+  text-align: center;
+  /* Subtle gradient that bleeds into the background */
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 229, 160, 0.04) 0%,
+    transparent 100%
+  );
+}
+
+/** Avatar circle */
+.profile-header__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid var(--color-accent);
+  background-color: var(--color-surface-elevated);
+}
+
+/** Fallback initials avatar */
+.profile-header__avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-surface-elevated);
+  border: 2.5px solid var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+/** User's display name */
+.profile-header__name {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-top: var(--space-xs);
+}
+
+/** Row containing badges (premium, language level) */
+.profile-header__badges {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/** Telegram username below the name */
+.profile-header__username {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATS ROW
+   Today's learning statistics: words learned, streak, minutes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/** Individual stat block */
+.stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/** Big number */
+.stats-item__value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+/** Label below the number */
+.stats-item__label {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE FORM
+   Edit fields for name, native language, learning languages.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 var(--space-md);
+}
+
+/** Section grouping within the form */
+.profile-form__section {
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-form__section:last-child {
+  border-bottom: none;
+}
+
+.profile-form__section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTEREST TAGS INPUT
+   Interactive chip-style tag input for interests.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.interest-tags-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background-color: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 48px;
+  transition: border-color var(--transition-fast);
+  cursor: text;
+}
+
+.interest-tags-input:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(0, 229, 160, 0.12);
+}
+
+/** A selected interest tag chip */
+.interest-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.2rem 0.6rem;
+  background-color: var(--color-accent-dim);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/** Remove button inside the tag */
+.interest-tag__remove {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgba(0, 229, 160, 0.25);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.interest-tag__remove:hover {
+  background-color: var(--color-accent);
+  color: #000;
+}
+
+/** Invisible input within the tags container */
+.interest-tags-input__input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  min-width: 80px;
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE LIST ROW
+   Tappable rows for navigation (e.g. "Logout", "Privacy Policy").
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.profile-list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.profile-list-row:hover {
+  opacity: 0.75;
+}
+
+.profile-list-row__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.profile-list-row__label {
+  flex: 1;
+  font-size: 0.92rem;
+  color: var(--color-text-primary);
+}
+
+/** Destructive row (logout, delete account) */
+.profile-list-row.is-danger .profile-list-row__label {
+  color: var(--color-error);
+}
+
+/** Chevron on the right */
+.profile-list-row__chevron {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
