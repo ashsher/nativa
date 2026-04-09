@@ -112,8 +112,8 @@ window.Api = (() => {
     getMe: () => request('GET', '/users/me'),
     updateMe: (data) => request('PUT', '/users/me', data),
 
-    processVideo: (url, languageId = getActiveLanguageId()) =>
-      request('POST', '/video/process', { url, language_id: languageId }),
+    processVideo: (url, languageId) =>
+      request('POST', '/video/process', { url, language_id: languageId ?? getActiveLanguageId() }),
 
     translate: (word, langCode = getActiveLanguageCode()) =>
       request(
