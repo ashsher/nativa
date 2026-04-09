@@ -130,9 +130,9 @@
     background-color var(--transition-fast);
   /* Prevent text-decoration inheritance from parent */
   text-decoration: none;
-  /* Ensure long-press can be detected without triggering text selection */
-  -webkit-user-select: none;
-  user-select: none;
+  /* Allow phrase selection for AI explanations in Telegram WebView */
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /** Hover — reveal accent underline */

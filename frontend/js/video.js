@@ -151,6 +151,8 @@ async function submitVideoURL(url) {
   // Allow only the exact YouTube hostnames (with or without www.).
   const isYouTube = hostname === 'youtube.com' ||
                     hostname === 'www.youtube.com' ||
+                    hostname === 'm.youtube.com' ||
+                    hostname === 'music.youtube.com' ||
                     hostname === 'youtu.be';
   if (!isYouTube) {
     showToast("Iltimos, to'g'ri YouTube havolasini kiriting.", 'error');
@@ -224,6 +226,10 @@ function extractVideoId(url) {
   // Try the /embed/<id> format.
   const embedMatch = url.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
   if (embedMatch) return embedMatch[1];
+
+  // Try the /shorts/<id> format.
+  const shortsMatch = url.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (shortsMatch) return shortsMatch[1];
 
   return null; // could not extract video ID
 }
@@ -406,39 +412,62 @@ function hideVideoLoadingSkeleton() {
 function wireSelectionHandler() {
   // Listen for selectionchange events globally; check if inside the subtitle panel.
   document.addEventListener('selectionchange', () => {
+    const btn = document.getElementById('ai-float-btn');
+    if (!btn) return;
+
     const sel = window.getSelection();
     // Hide the button if there's no selection or the selection is empty.
     if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) {
-      document.getElementById('ai-float-btn').style.display = 'none';
+      btn.style.display = 'none';
+      return;
+    }
+
+    let range;
+    try {
+      range = sel.getRangeAt(0);
+    } catch (_) {
+      btn.style.display = 'none';
       return;
     }
 
     // Check if the selection is inside the subtitle panel.
-    const range = sel.getRangeAt(0);
     const panel = document.getElementById('subtitle-panel');
     if (!panel || !panel.contains(range.commonAncestorContainer)) {
       // Selection is outside the subtitle panel; hide the AI button.
-      document.getElementById('ai-float-btn').style.display = 'none';
+      btn.style.display = 'none';
+      return;
+    }
+
+    const selectedText = sel.toString().trim();
+    if (selectedText.length < 2) {
+      btn.style.display = 'none';
       return;
     }
 
     // Get the bounding rect of the selection to position the button near it.
     const rect = range.getBoundingClientRect();
-    const btn  = document.getElementById('ai-float-btn');
-    if (!btn) return;
 
-    // Position the button just above the selection with a small gap.
+    // Position the button just above the selection with viewport-safe bounds.
     btn.style.display = 'block';
     btn.style.position = 'fixed';
-    btn.style.top  = (rect.top  - 40 + window.scrollY) + 'px';
-    btn.style.left = (rect.left + window.scrollX)       + 'px';
+    btn.style.zIndex = '430';
+
+    const margin = 8;
+    const top = Math.max(margin, rect.top - 44);
+    const maxLeft = Math.max(margin, window.innerWidth - btn.offsetWidth - margin);
+    const left = Math.min(maxLeft, Math.max(margin, rect.left));
+
+    btn.style.top = `${top}px`;
+    btn.style.left = `${left}px`;
+    btn.dataset.selection = selectedText;
 
     // Wire the click handler (replacing any previous handler).
-    btn.onclick = () => {
-      // Capture the selected text before it disappears on click.
-      const selectedText = sel.toString().trim();
+    btn.onclick = (event) => {
+      event.preventDefault();
+      const text = (btn.dataset.selection || '').trim();
+      if (!text) return;
       // Open the AI grammar explanation popup in 'video' context.
-      if (window.AiPopup) AiPopup.show(selectedText, 'video');
+      if (window.AiPopup) AiPopup.show(text, 'video');
       // Hide the floating button after use.
       btn.style.display = 'none';
     };

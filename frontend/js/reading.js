@@ -249,37 +249,61 @@ function showReadingLoadingSkeleton() {
 function wireReadingSelectionHandler() {
   // Listen globally; filter to article container.
   document.addEventListener('selectionchange', () => {
+    const btn = document.getElementById('ai-float-btn');
+    if (!btn) return;
+
     const sel = window.getSelection();
     // If nothing is selected, hide the AI float button.
     if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) {
-      const floatBtn = document.getElementById('ai-float-btn');
-      if (floatBtn) floatBtn.style.display = 'none';
+      btn.style.display = 'none';
+      return;
+    }
+
+    let range;
+    try {
+      range = sel.getRangeAt(0);
+    } catch (_) {
+      btn.style.display = 'none';
       return;
     }
 
     // Check if the selection is inside the article container.
-    const range     = sel.getRangeAt(0);
     const container = document.getElementById('article-container');
     if (!container || !container.contains(range.commonAncestorContainer)) {
+      btn.style.display = 'none';
       return; // selection is outside article; don't interfere
+    }
+
+    const selectedText = sel.toString().trim();
+    if (selectedText.length < 2) {
+      btn.style.display = 'none';
+      return;
     }
 
     // Position the floating AI button near the selection.
     const rect = range.getBoundingClientRect();
-    const btn  = document.getElementById('ai-float-btn');
-    if (!btn) return;
 
     // Show button just above the selection.
-    btn.style.display  = 'block';
+    btn.style.display = 'block';
     btn.style.position = 'fixed';
-    btn.style.top      = (rect.top  - 40 + window.scrollY) + 'px';
-    btn.style.left     = (rect.left + window.scrollX)       + 'px';
+    btn.style.zIndex = '430';
+
+    const margin = 8;
+    const top = Math.max(margin, rect.top - 44);
+    const maxLeft = Math.max(margin, window.innerWidth - btn.offsetWidth - margin);
+    const left = Math.min(maxLeft, Math.max(margin, rect.left));
+
+    btn.style.top = `${top}px`;
+    btn.style.left = `${left}px`;
+    btn.dataset.selection = selectedText;
 
     // Replace click handler each time to capture the current selection text.
-    btn.onclick = () => {
-      const selectedText = sel.toString().trim();
+    btn.onclick = (event) => {
+      event.preventDefault();
+      const text = (btn.dataset.selection || '').trim();
+      if (!text) return;
       // Open AI popup in 'reading' context.
-      if (window.AiPopup) AiPopup.show(selectedText, 'reading');
+      if (window.AiPopup) AiPopup.show(text, 'reading');
       // Hide the floating button immediately.
       btn.style.display = 'none';
     };

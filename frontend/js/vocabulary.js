@@ -332,7 +332,7 @@ function flipCard() {
   // After the flip animation completes (400ms), show the rating buttons.
   setTimeout(() => {
     // Show rating buttons (CSS ratingIn animation staggers their entrance).
-    document.getElementById('rating-buttons').style.display = 'flex';
+    document.getElementById('rating-buttons').style.display = 'grid';
     // Hide the flip hint since the card is now face-up.
     const hint = document.getElementById('flip-hint');
     if (hint) hint.style.display = 'none';

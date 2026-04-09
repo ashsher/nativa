@@ -296,6 +296,69 @@ button {
   box-shadow: var(--theme-shadow);
 }
 
+#vocab-review-state {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.review-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 0;
+}
+
+#review-counter {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+#flashcard {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  margin: 2px 0;
+  transform-style: preserve-3d;
+}
+
+#card-front,
+#card-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 18px;
+  border-radius: inherit;
+}
+
+#card-front {
+  font-size: clamp(1.6rem, 7vw, 2.4rem);
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+#card-back {
+  font-size: clamp(1.2rem, 5.2vw, 1.8rem);
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+#rating-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#flip-hint {
+  text-align: center;
+  color: #64748b;
+  margin: 0;
+}
+
 .rating-btn,
 .srs-rating-btn {
   border: 1px solid #dbeafe;
