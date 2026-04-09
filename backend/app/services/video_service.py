@@ -226,7 +226,7 @@ async def _fetch_subtitles_innertube(
 
 
 # ---------------------------------------------------------------------------
-# SECONDARY: yt-dlp (requires yt-dlp package, good fallback)
+# PRIMARY: youtube-transcript-api (new instance-based API, >=0.6.3)
 # ---------------------------------------------------------------------------
 
 def _parse_json3_subtitles(data: dict) -> list[dict[str, Any]]:
@@ -346,7 +346,7 @@ async def _fetch_subtitles_ytdlp(
 
 
 # ---------------------------------------------------------------------------
-# FALLBACK 1: youtube-transcript-api
+# FALLBACK 1: youtube-transcript-api (new instance API, >=0.6.3)
 # ---------------------------------------------------------------------------
 
 def _fetch_best_available_transcript(
@@ -354,28 +354,36 @@ def _fetch_best_available_transcript(
     preferred_lang_codes: list[str],
 ) -> list[dict[str, Any]]:
     """
-    Fetch transcript via youtube-transcript-api with fallback order:
-      1) preferred manual transcript
-      2) preferred generated transcript
-      3) any available transcript
+    Fetch transcript using youtube-transcript-api's new instance-based API
+    (introduced in >=0.6.3).  The new API uses an internal mechanism that
+    bypasses YouTube's bot detection, unlike the old static-method API (0.6.2).
+
+    Priority order:
+      1) Preferred language match (exact or prefix)
+      2) Any available transcript
     """
     from youtube_transcript_api import YouTubeTranscriptApi  # noqa: PLC0415
 
-    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    api = YouTubeTranscriptApi()
+    # Convert to list so we can iterate multiple times for language matching.
+    transcripts = list(api.list(video_id))
 
-    for finder in (
-        transcript_list.find_transcript,
-        transcript_list.find_generated_transcript,
-    ):
-        try:
-            transcript = finder(preferred_lang_codes)
-            return _normalise_transcript_items(transcript.fetch())
-        except Exception:
-            pass
+    preferred = [p.lower() for p in preferred_lang_codes]
 
-    for transcript in transcript_list:
+    # 1. Try preferred languages first.
+    for lang in preferred:
+        for t in transcripts:
+            code = t.language_code.lower()
+            if code == lang or code.startswith(lang + "-") or lang.startswith(code + "-"):
+                try:
+                    return _normalise_transcript_items(t.fetch())
+                except Exception:
+                    continue
+
+    # 2. Fall back to first available transcript in any language.
+    for t in transcripts:
         try:
-            return _normalise_transcript_items(transcript.fetch())
+            return _normalise_transcript_items(t.fetch())
         except Exception:
             continue
 
@@ -515,22 +523,23 @@ async def process_video(
 
     # --- Step 3: Fetch subtitles with cascading fallbacks ---
 
-    # 3a. Primary: InnerTube Android client API — works on VPS IPs without cookies.
-    transcript_list = await _fetch_subtitles_innertube(video_id, preferred_langs)
+    # 3a. Primary: youtube-transcript-api new instance API (>=0.6.3).
+    #     This is what worked in the confirmed Flask prototype.
+    try:
+        transcript_list = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: _fetch_best_available_transcript(video_id, preferred_langs),
+        )
+    except Exception:
+        transcript_list = []
 
-    # 3b. Secondary: yt-dlp (if installed).
+    # 3b. Secondary: InnerTube Android client (pure httpx, no extra package).
+    if not transcript_list:
+        transcript_list = await _fetch_subtitles_innertube(video_id, preferred_langs)
+
+    # 3c. Tertiary: yt-dlp (if installed).
     if not transcript_list:
         transcript_list = await _fetch_subtitles_ytdlp(video_id, preferred_langs)
-
-    # 3c. Tertiary: youtube-transcript-api.
-    if not transcript_list:
-        try:
-            transcript_list = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: _fetch_best_available_transcript(video_id, preferred_langs),
-            )
-        except Exception:
-            transcript_list = []
 
     # 3d. Last resort: legacy timedtext endpoint.
     if not transcript_list:

@@ -30,7 +30,7 @@ beautifulsoup4==4.12.3
 lxml==5.3.0
 
 # YouTube subtitle extraction
-youtube-transcript-api==0.6.2
+youtube-transcript-api
 yt-dlp==2025.3.31
 
 # Google Cloud services
