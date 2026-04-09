@@ -118,7 +118,115 @@ def _normalise_transcript_items(items: list[Any]) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# PRIMARY: yt-dlp subtitle fetcher
+# PRIMARY: InnerTube Android client (most reliable on VPS IPs)
+# ---------------------------------------------------------------------------
+
+# Public InnerTube API key extracted from the YouTube web client source.
+# Used by yt-dlp and many subtitle tools; stable across YouTube clients.
+_INNERTUBE_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
+
+# Android client context — mimics the official YouTube Android app.
+# This client bypasses bot detection on VPS IPs without cookies.
+_ANDROID_CLIENT = {
+    "clientName": "ANDROID",
+    "clientVersion": "19.09.37",
+    "androidSdkVersion": 30,
+    "userAgent": (
+        "com.google.android.youtube/19.09.37 "
+        "(Linux; U; Android 11; en_US; sdk_gphone_x86 Build/RSR1.210722.013.A6) "
+        "gzip"
+    ),
+    "hl": "en",
+    "gl": "US",
+}
+
+
+def _score_caption_track(lang_code: str, preferred: list[str]) -> int:
+    """Return a lower score for higher-priority language matches."""
+    lc = lang_code.lower()
+    for idx, p in enumerate(preferred):
+        if lc == p:
+            return idx
+        if lc.startswith(p + "-") or p.startswith(lc + "-"):
+            return idx + 100
+    return 10_000
+
+
+async def _fetch_subtitles_innertube(
+    video_id: str,
+    preferred_langs: list[str],
+) -> list[dict[str, Any]]:
+    """
+    Fetch subtitles via YouTube's InnerTube API using the Android client.
+
+    The Android client endpoint accepts unauthenticated requests for public
+    videos and is not subject to the same IP-based bot detection that blocks
+    the web client on VPS / data-centre IPs.
+
+    Returns a list of caption dicts (text, start, duration) or [] on failure.
+    """
+    payload = {
+        "context": {"client": _ANDROID_CLIENT},
+        "videoId": video_id,
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": _ANDROID_CLIENT["userAgent"],
+        "X-YouTube-Client-Name": "3",          # ANDROID = 3
+        "X-YouTube-Client-Version": _ANDROID_CLIENT["clientVersion"],
+        "Origin": "https://www.youtube.com",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(
+                f"https://www.youtube.com/youtubei/v1/player?key={_INNERTUBE_KEY}",
+                json=payload,
+                headers=headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return []
+
+    # Extract caption track list from the player response.
+    captions_renderer = (
+        data.get("captions", {})
+        .get("playerCaptionsTracklistRenderer", {})
+    )
+    tracks: list[dict] = captions_renderer.get("captionTracks", [])
+    if not tracks:
+        return []
+
+    preferred_lower = [p.lower() for p in preferred_langs]
+
+    # Sort tracks by language preference score (lower = better).
+    tracks.sort(
+        key=lambda t: _score_caption_track(
+            t.get("languageCode", ""), preferred_lower
+        )
+    )
+    best = tracks[0]
+    base_url: str = best.get("baseUrl", "")
+    if not base_url:
+        return []
+
+    # Request JSON3 format for easy parsing.
+    json3_url = base_url + "&fmt=json3"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            cap_resp = await client.get(json3_url)
+            cap_resp.raise_for_status()
+            cap_data = cap_resp.json()
+    except Exception:
+        return []
+
+    return _parse_json3_subtitles(cap_data)
+
+
+# ---------------------------------------------------------------------------
+# SECONDARY: yt-dlp (requires yt-dlp package, good fallback)
 # ---------------------------------------------------------------------------
 
 def _parse_json3_subtitles(data: dict) -> list[dict[str, Any]]:
@@ -407,17 +515,16 @@ async def process_video(
 
     # --- Step 3: Fetch subtitles with cascading fallbacks ---
 
-    # 3a. Primary: yt-dlp (uses internal YouTube clients, bypasses bot detection)
-    transcript_list = await _fetch_subtitles_ytdlp(video_id, preferred_langs)
+    # 3a. Primary: InnerTube Android client API — works on VPS IPs without cookies.
+    transcript_list = await _fetch_subtitles_innertube(video_id, preferred_langs)
 
-    # 3b. Fallback: youtube-transcript-api
+    # 3b. Secondary: yt-dlp (if installed).
+    if not transcript_list:
+        transcript_list = await _fetch_subtitles_ytdlp(video_id, preferred_langs)
+
+    # 3c. Tertiary: youtube-transcript-api.
     if not transcript_list:
         try:
-            from youtube_transcript_api import (  # noqa: PLC0415
-                NoTranscriptFound,
-                TranscriptsDisabled,
-            )
-
             transcript_list = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: _fetch_best_available_transcript(video_id, preferred_langs),
@@ -425,7 +532,7 @@ async def process_video(
         except Exception:
             transcript_list = []
 
-    # 3c. Last resort: legacy timedtext endpoint
+    # 3d. Last resort: legacy timedtext endpoint.
     if not transcript_list:
         try:
             transcript_list = await _fetch_timedtext_fallback(video_id, preferred_langs)
