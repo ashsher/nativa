@@ -77,6 +77,14 @@ class Settings(BaseSettings):
         ),
     )
 
+    GEMINI_MODEL: str = Field(
+        default="gemini-2.0-flash",
+        description=(
+            "Preferred Gemini model name. The service still auto-falls back "
+            "to other available models if this one is not supported."
+        ),
+    )
+
     YOUTUBE_API_KEY: str = Field(
         ...,
         description=(

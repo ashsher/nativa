@@ -20,7 +20,7 @@ from app.utils.redis_client import get_cache, set_cache
 from app.utils.r2_client import upload_file
 
 # Redis cache key prefix and TTL.
-_CACHE_PREFIX = "tts:"
+_CACHE_PREFIX = "tts:v2:"
 _CACHE_TTL = 30 * 24 * 3_600  # 30 days in seconds
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,14 @@ def _word_hash(word: str, language_code: str) -> str:
     Uses SHA-256 of the lowercase word, truncated to 16 hex characters.
     """
     return hashlib.sha256(f"{language_code}:{word.lower()}".encode()).hexdigest()[:16]
+
+
+def _as_data_url(mp3_bytes: bytes) -> str:
+    """
+    Build an inline audio data URL fallback when object storage URL is unavailable.
+    """
+    b64 = base64.b64encode(mp3_bytes).decode("ascii")
+    return f"data:audio/mpeg;base64,{b64}"
 
 
 async def _synthesise_via_rest(word: str, language_code: str) -> Optional[bytes]:
@@ -166,8 +174,23 @@ async def synthesise(word: str, language_code: str = "en-US") -> Optional[str]:
     try:
         public_url = await upload_file(r2_key, mp3_bytes, "audio/mpeg")
     except Exception as exc:
-        logger.warning("R2 upload failed for '%s': %s", word, exc)
-        return None
+        logger.warning("R2 upload failed for '%s': %s; using inline audio URL", word, exc)
+        public_url = _as_data_url(mp3_bytes)
+    else:
+        # Verify URL is reachable. If not, fall back to inline data URL.
+        try:
+            async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
+                probe = await client.get(public_url)
+            if probe.status_code >= 400:
+                logger.warning(
+                    "R2 URL probe failed (%s) for '%s'; using inline audio URL",
+                    probe.status_code,
+                    word,
+                )
+                public_url = _as_data_url(mp3_bytes)
+        except Exception as exc:
+            logger.warning("R2 URL probe error for '%s': %s; using inline audio URL", word, exc)
+            public_url = _as_data_url(mp3_bytes)
 
     # --- Step 5: Cache the public URL ---
     await set_cache(cache_key, public_url, _CACHE_TTL)

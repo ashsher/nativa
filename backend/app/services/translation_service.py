@@ -20,11 +20,8 @@ from app.utils.redis_client import get_cache, set_cache
 from app.services import tts_service
 
 # Redis key pattern and TTL.
-_CACHE_PREFIX = "trans:"
+_CACHE_PREFIX = "trans:v2:"
 _CACHE_TTL = 7 * 24 * 3_600  # 7 days in seconds
-
-# Number of example sentences to fetch per word.
-_EXAMPLE_COUNT = 3
 
 logger = logging.getLogger(__name__)
 
@@ -116,28 +113,13 @@ async def _get_example_sentences(
     word: str, lang_code: str
 ) -> List[Dict[str, str]]:
     """
-    Generate example sentences for *word* via Google Translate.
+    Return contextual example sentences.
 
-    We construct simple template sentences and translate them to Uzbek.
-    Returns a list of dicts: [{"sentence": "...", "translation": "..."}].
+    Previous fixed templates felt repetitive in UI, so we return an empty list
+    for now. This keeps the popup clean and avoids low-quality repeated output.
     """
-    # Template sentences that illustrate common usage.
-    templates = [
-        f"I saw {word} yesterday.",
-        f"She likes {word} very much.",
-        f"This is a great example of {word}.",
-    ]
-
-    examples: List[Dict[str, str]] = []
-    for sentence in templates[:_EXAMPLE_COUNT]:
-        translation = await _translate_word_via_rest(sentence, lang_code)
-        if not translation:
-            translation = await _translate_word_via_client(sentence, lang_code)
-        if not translation:
-            translation = ""
-        examples.append({"sentence": sentence, "translation": translation})
-
-    return examples
+    _ = word, lang_code
+    return []
 
 
 async def translate_word(

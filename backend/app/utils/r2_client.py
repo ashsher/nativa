@@ -42,6 +42,36 @@ def get_r2_client() -> BaseClient:
     )
 
 
+def _build_public_url(key: str) -> str:
+    """
+    Build a browser-consumable public URL for an uploaded R2 object.
+
+    Notes:
+      - `*.r2.cloudflarestorage.com` is the S3 API endpoint and often not
+        directly usable as a public CDN URL.
+      - If the configured base URL looks like an API endpoint, fall back to
+        the standard public `r2.dev` host.
+    """
+    configured = (settings.R2_PUBLIC_URL or "").strip()
+
+    if not configured:
+        return (
+            f"https://{settings.R2_BUCKET_NAME}.{settings.R2_ACCOUNT_ID}.r2.dev/"
+            f"{key.lstrip('/')}"
+        )
+
+    base = configured.rstrip("/")
+
+    # If user configured the S3 API endpoint as "public URL", convert to r2.dev.
+    if ".r2.cloudflarestorage.com" in base and ".r2.dev" not in base:
+        return (
+            f"https://{settings.R2_BUCKET_NAME}.{settings.R2_ACCOUNT_ID}.r2.dev/"
+            f"{key.lstrip('/')}"
+        )
+
+    return f"{base}/{key.lstrip('/')}"
+
+
 async def upload_file(key: str, data: bytes, content_type: str) -> str:
     """
     Upload *data* to R2 under *key* and return the public CDN URL.
@@ -77,6 +107,6 @@ async def upload_file(key: str, data: bytes, content_type: str) -> str:
         ),
     )
 
-    # Construct the public URL from the configured CDN base URL.
-    public_url = f"{settings.R2_PUBLIC_URL.rstrip('/')}/{key}"
+    # Construct a public URL suitable for browser playback.
+    public_url = _build_public_url(key)
     return public_url

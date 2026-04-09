@@ -8,7 +8,9 @@ VideoSession record to the database, and returns a structured JSON payload.
 
 from __future__ import annotations
 
+import html
 import re
+import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -147,6 +149,107 @@ def _fetch_best_available_transcript(
     return []
 
 
+async def _fetch_timedtext_fallback(
+    video_id: str,
+    preferred_lang_codes: list[str],
+) -> list[dict[str, Any]]:
+    """
+    Fallback caption retrieval using YouTube timedtext endpoints.
+
+    This helps in cases where youtube-transcript-api cannot resolve tracks
+    even though captions exist.
+    """
+    list_url = "https://www.youtube.com/api/timedtext"
+
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        list_resp = await client.get(list_url, params={"type": "list", "v": video_id})
+        list_resp.raise_for_status()
+        if not list_resp.text.strip():
+            return []
+
+        try:
+            root = ET.fromstring(list_resp.text)
+        except ET.ParseError:
+            return []
+
+        tracks: list[dict[str, str]] = []
+        for track in root.findall("track"):
+            lang = (track.attrib.get("lang_code") or "").strip()
+            if not lang:
+                continue
+            tracks.append(
+                {
+                    "lang": lang,
+                    "name": (track.attrib.get("name") or "").strip(),
+                    "kind": (track.attrib.get("kind") or "").strip(),
+                }
+            )
+
+        if not tracks:
+            return []
+
+        preferred = [p.lower() for p in preferred_lang_codes if p]
+
+        def score(item: dict[str, str]) -> int:
+            lang = item["lang"].lower()
+            best = 10_000
+            for idx, p in enumerate(preferred):
+                if lang == p:
+                    return idx
+                if lang.startswith(f"{p}-") or p.startswith(f"{lang}-"):
+                    best = min(best, idx + 100)
+            return best
+
+        tracks.sort(key=score)
+        chosen = tracks[0]
+
+        params: dict[str, str] = {"v": video_id, "lang": chosen["lang"]}
+        if chosen["name"]:
+            params["name"] = chosen["name"]
+        if chosen["kind"]:
+            params["kind"] = chosen["kind"]
+
+        cap_resp = await client.get(list_url, params=params)
+        cap_resp.raise_for_status()
+        if not cap_resp.text.strip():
+            return []
+
+        try:
+            cap_root = ET.fromstring(cap_resp.text)
+        except ET.ParseError:
+            return []
+
+        items: list[dict[str, Any]] = []
+        for node in cap_root.findall("text"):
+            text_raw = (node.text or "").strip()
+            text = html.unescape(text_raw).replace("\n", " ").strip()
+            if not text:
+                continue
+
+            try:
+                start = float(node.attrib.get("start", "0") or "0")
+            except ValueError:
+                start = 0.0
+
+            try:
+                duration = float(node.attrib.get("dur", "0") or "0")
+            except ValueError:
+                duration = 0.0
+
+            if duration <= 0:
+                duration = 2.0
+
+            items.append(
+                {
+                    "text": text,
+                    "start": start,
+                    "duration": duration,
+                }
+            )
+
+        return items
+
+
 def _parse_iso8601_duration(duration: str) -> Optional[int]:
     """
     Convert an ISO 8601 duration string to total seconds.
@@ -207,31 +310,37 @@ async def process_video(
     # YouTubeTranscriptApi is synchronous; run in default thread pool.
     import asyncio
 
+    transcript_error: str | None = None
     try:
         transcript_list = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: _fetch_best_available_transcript(video_id, preferred_langs),
         )
     except TranscriptsDisabled:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Bu video uchun subtitrlar o'chirib qo'yilgan.",
-        )
+        transcript_error = "disabled"
+        transcript_list = []
     except NoTranscriptFound:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Bu video uchun subtitrlar topilmadi.",
-        )
+        transcript_error = "not_found"
+        transcript_list = []
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"YouTube API xatosi: {exc}",
-        )
+        transcript_error = str(exc)
+        transcript_list = []
+
+    # Step 3b: timedtext fallback for videos where transcript API misses captions.
+    if not transcript_list:
+        try:
+            transcript_list = await _fetch_timedtext_fallback(video_id, preferred_langs)
+        except Exception:
+            transcript_list = []
 
     if not transcript_list:
+        if transcript_error == "disabled":
+            detail = "Bu video uchun subtitrlar o'chirib qo'yilgan."
+        else:
+            detail = "Bu video uchun subtitrlar topilmadi yoki o'qib bo'lmadi."
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Bu video uchun subtitrlar topilmadi yoki o'qib bo'lmadi.",
+            detail=detail,
         )
 
     # --- Step 4: Tokenise each subtitle segment ---
