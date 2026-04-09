@@ -1,3 +1,12 @@
+/* Cal Sans — cal.com's display font, loaded via jsDelivr CDN */
+@font-face {
+  font-family: 'Cal Sans';
+  src: url('https://cdn.jsdelivr.net/gh/calcom/font@main/fonts/CalSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Backgrounds - deep dark editorial palette */
   --color-bg-primary:    #0D0F14;   /* Main app background */
@@ -5,10 +14,10 @@
   --color-bg-elevated:   #1A1D25;   /* Cards, inputs */
   --color-bg-surface:    #21252F;   /* Tooltips, dropdowns */
 
-  /* Brand accent - electric blue */
-  --color-accent:        #2B7FFF;   /* Primary interactive colour */
-  --color-accent-hover:  #4D94FF;   /* Hover state */
-  --color-accent-muted:  rgba(43, 127, 255, 0.12); /* Subtle accent fill */
+  /* Brand accent - #2563eb (matches cal.com / Tailwind blue-600) */
+  --color-accent:        #2563eb;   /* Primary interactive colour */
+  --color-accent-hover:  #3b82f6;   /* Hover state */
+  --color-accent-muted:  rgba(37, 99, 235, 0.12); /* Subtle accent fill */
 
   /* Text hierarchy */
   --color-text-primary:  #F0F2F8;   /* Main body text */
@@ -20,9 +29,9 @@
   --color-warning: #F5A623;  /* Warnings */
   --color-danger:  #FF4D6D;  /* Errors, destructive actions */
 
-  /* Typography */
-  --font-display: 'Syne', sans-serif;    /* Headings, word display */
-  --font-body:    'DM Sans', sans-serif; /* Body copy, UI labels */
+  /* Typography — Cal Sans for display, Inter for body */
+  --font-display: 'Cal Sans', 'Inter', sans-serif;
+  --font-body:    'Inter', sans-serif;
 
   /* Fluid font scale */
   --text-xs:   0.6875rem;  /* 11px */
@@ -54,7 +63,7 @@
   /* Shadows */
   --shadow-sm:     0 1px 3px rgba(0,0,0,0.4);
   --shadow-md:     0 4px 16px rgba(0,0,0,0.5);
-  --shadow-accent: 0 4px 24px rgba(43,127,255,0.25);
+  --shadow-accent: 0 4px 24px rgba(37,99,235,0.25);
 
   /* Transitions */
   --transition-fast:   150ms cubic-bezier(0.4,0,0.2,1);

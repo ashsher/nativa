@@ -16,8 +16,8 @@
   <!-- Preconnect to Google Fonts CDN for faster font negotiation -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Load Syne (display/heading font) and DM Sans (body/UI font) from Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Inter: body and UI text (cal.com's body font) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- CSS load order matters: variables first so all tokens are defined before they are used -->
   <link rel="stylesheet" href="css/variables.css?v=20260409a" />   <!-- design tokens -->
@@ -206,8 +206,9 @@
       <!-- ── Session complete state (hidden) ─────────────────── -->
       <div id="vocab-complete-state" style="display:none">
         <div class="session-complete">
-          <!-- Celebration emoji -->
-          <div class="session-complete__emoji">🎉</div>
+          <div class="session-complete__icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
           <h2>Barakalla!</h2>
           <!-- e.g. "Bugun 8 ta so'z takrorlandi" — filled by vocabulary.js -->
           <p id="session-complete-stats"></p>
@@ -362,9 +363,15 @@
       <!-- Action buttons row -->
       <div class="popup__actions">
         <!-- Audio button: plays pronunciation MP3 from TTS service -->
-        <button class="btn btn--ghost popup__audio-btn" id="popup-audio-btn">🔊 Talaffuz</button>
+        <button class="btn btn--ghost popup__audio-btn" id="popup-audio-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          Talaffuz
+        </button>
         <!-- Save button: adds word to vocabulary deck via Api.addWord() -->
-        <button class="btn btn--primary popup__save-btn" id="popup-save-btn">📚 Saqlash</button>
+        <button class="btn btn--primary popup__save-btn" id="popup-save-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+          Saqlash
+        </button>
       </div>
       <!-- Example sentences rendered by popup.js renderContent() -->
       <div id="popup-examples" class="popup__examples"></div>
@@ -415,7 +422,7 @@
         <thead>
           <tr>
             <th>Bepul</th>
-            <th>Premium ⚡</th>
+            <th>Premium</th>
           </tr>
         </thead>
         <tbody>
@@ -426,9 +433,9 @@
         </tbody>
       </table>
       <!-- Price display -->
-      <p class="modal__price">💳 $2/oy (≈25 000 so'm)</p>
+      <p class="modal__price">$2/oy (≈25 000 so'm)</p>
       <!-- Primary CTA: payment.js calls initiatePayment() -->
-      <button class="btn btn--primary btn--full" id="upgrade-btn">Premium olish ⚡</button>
+      <button class="btn btn--primary btn--full" id="upgrade-btn">Premium olish</button>
       <!-- Dismiss without paying -->
       <button class="btn btn--ghost btn--full" id="modal-dismiss-btn">Keyinroq</button>
     </div>
@@ -440,7 +447,8 @@
        clicking it opens the AI grammar popup.
        ──────────────────────────────────────────────────────────── -->
   <button id="ai-float-btn" class="ai-float-btn" style="display:none" aria-label="AI grammatika tushuntirishi">
-    🤖 AI so'rang
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.937A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+    AI so'rang
   </button>
 
   <!-- ── TOAST NOTIFICATION ─────────────────────────────────────

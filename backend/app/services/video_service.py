@@ -176,8 +176,8 @@ async def _fetch_subtitles_ytdlp(
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        # Use the TV embedded client — bypasses most bot detection
-        "extractor_args": {"youtube": {"player_client": ["tv_embedded", "web"]}},
+        # iOS client uses the YouTube iOS app API — most reliable on VPS IPs
+        "extractor_args": {"youtube": {"player_client": ["ios", "tv_embedded", "web"]}},
     }
 
     def _extract() -> dict:

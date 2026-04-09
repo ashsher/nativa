@@ -20,13 +20,13 @@ body {
     radial-gradient(1300px 640px at 50% -220px, rgba(37, 99, 235, 0.14), transparent 70%),
     linear-gradient(180deg, #f8fafc 0%, #eff6ff 46%, #f8fafc 100%);
   color: var(--theme-text);
-  font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.55;
 }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--theme-text);
-  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Cal Sans", "Inter", -apple-system, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -359,21 +359,175 @@ button {
   margin: 0;
 }
 
+/* ── Vocabulary mode enhancements ─────────────────────────────────────── */
+
+.vocab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.vocab-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.vocab-stats {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.badge--accent {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+/* Vocab list cards — left accent stripe */
+.vocab-card {
+  border-left: 3px solid #2563eb !important;
+  padding: 10px 12px !important;
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.vocab-card:hover {
+  box-shadow: 0 4px 16px -8px rgba(37, 99, 235, 0.22) !important;
+}
+
+.vocab-card__interval {
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+}
+
+.vocab-card__delete {
+  color: #94a3b8;
+  padding: 4px;
+  line-height: 0;
+}
+
+.vocab-card__delete:hover {
+  color: #dc2626;
+}
+
+/* Flashcard */
+.card,
+#flashcard {
+  border: 1px solid #dbeafe !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+  box-shadow: 0 24px 56px -28px rgba(37, 99, 235, 0.2), 0 4px 14px -6px rgba(15, 23, 42, 0.08) !important;
+  min-height: 230px;
+}
+
+#card-front {
+  font-size: clamp(2rem, 9vw, 3rem);
+  font-weight: 600;
+  font-family: "Cal Sans", "Inter", sans-serif;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#card-back {
+  font-size: clamp(1.4rem, 6vw, 2.2rem);
+  font-weight: 600;
+  font-family: "Cal Sans", "Inter", sans-serif;
+  color: #2563eb;
+  letter-spacing: -0.02em;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flip-hint {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #94a3b8 !important;
+  letter-spacing: 0.02em;
+}
+
+/* SRS rating buttons */
 .rating-btn,
 .srs-rating-btn {
-  border: 1px solid #dbeafe;
-  background: #ffffff;
+  padding: 12px 6px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
-.rating-btn--good,
+.rating-btn:active {
+  transform: scale(0.94);
+}
+
+.rating-btn--forgot {
+  background: #fff1f1;
+  border: 1.5px solid #fecaca;
+  color: #dc2626;
+}
+
+.rating-btn--hard {
+  background: #fffbeb;
+  border: 1.5px solid #fed7aa;
+  color: #d97706;
+}
+
+.rating-btn--good {
+  background: #eff6ff;
+  border: 1.5px solid #93c5fd;
+  color: #1d4ed8;
+}
+
 .rating-btn--easy {
-  border-color: #93c5fd;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #16a34a;
 }
 
-.rating-btn--forgot,
-.srs-rating-btn[data-rating="0"] {
-  border-color: #fecaca;
-  color: var(--theme-danger);
+/* Session complete state */
+.session-complete {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 28px 16px !important;
+}
+
+.session-complete__icon {
+  width: 60px;
+  height: 60px;
+  background: #eff6ff;
+  border: 2px solid #bfdbfe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+}
+
+.session-complete h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.session-complete p {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Start review button */
+#start-review-btn {
+  margin-top: 4px;
 }
 
 .profile-header {
@@ -547,6 +701,10 @@ button {
 .popup__audio-btn,
 .popup__save-btn {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .popup__examples {
@@ -636,7 +794,7 @@ button {
 .popup__quote {
   font-size: 0.9rem;
   font-style: italic;
-  border-left: 3px solid #2b7fff;
+  border-left: 3px solid #2563eb;
   padding: 6px 10px;
   margin: 0 0 12px;
   background: #f0f6ff;
@@ -658,7 +816,7 @@ button {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #2b7fff;
+  color: #2563eb;
   margin: 12px 0 4px;
   padding-bottom: 4px;
   border-bottom: 1.5px solid #dbeafe;
@@ -704,7 +862,7 @@ button {
 }
 
 .ai-list li::marker {
-  color: #2b7fff;
+  color: #2563eb;
 }
 
 .ai-response strong {
@@ -799,11 +957,18 @@ button {
 }
 
 .ai-float-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 1px solid #93c5fd;
-  background: linear-gradient(180deg, #60a5fa, #2563eb);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #ffffff;
   border-radius: 999px;
-  box-shadow: 0 10px 22px -12px rgba(37, 99, 235, 0.7);
+  box-shadow: 0 8px 20px -10px rgba(37, 99, 235, 0.65);
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
 }
 
 .toast {
