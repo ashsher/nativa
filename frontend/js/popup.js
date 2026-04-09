@@ -47,6 +47,9 @@ const Popup = (() => {
       document.getElementById('popup-translation').textContent = 'Tarjima topilmadi';
       // Clear the examples skeleton.
       document.getElementById('popup-examples').innerHTML = '';
+      const audioBtn = document.getElementById('popup-audio-btn');
+      audioBtn.onclick = null;
+      audioBtn.disabled = true;
     }
   }
 
@@ -99,16 +102,22 @@ const Popup = (() => {
     document.getElementById('popup-translation').textContent = data.translation || '';
 
     // Wire the audio button if a pronunciation URL was returned.
+    const audioBtn = document.getElementById('popup-audio-btn');
+    audioBtn.onclick = null;
+    audioBtn.disabled = !data.pronunciation_url;
     if (data.pronunciation_url) {
-      const audioBtn = document.getElementById('popup-audio-btn');
       // Replace any previous click handler with a new one for this word.
-      audioBtn.onclick = () => {
-        // Stop any currently playing audio before starting a new one.
-        if (currentAudio) currentAudio.pause();
-        // Create a new Audio object with the TTS MP3 URL from Cloudflare R2.
-        currentAudio = new Audio(data.pronunciation_url);
-        // Start playback immediately.
-        currentAudio.play();
+      audioBtn.onclick = async () => {
+        try {
+          // Stop any currently playing audio before starting a new one.
+          if (currentAudio) currentAudio.pause();
+          // Create a new Audio object with the TTS MP3 URL from Cloudflare R2.
+          currentAudio = new Audio(data.pronunciation_url);
+          // Start playback immediately.
+          await currentAudio.play();
+        } catch (_) {
+          showToast("Audio ijro etib bo'lmadi.", 'error');
+        }
       };
     }
 

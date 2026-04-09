@@ -9,8 +9,13 @@ a pronunciation audio URL via tts_service.
 
 from __future__ import annotations
 
+import html
+import logging
 from typing import Any, Dict, List, Optional
 
+import httpx
+
+from app.config import settings
 from app.utils.redis_client import get_cache, set_cache
 from app.services import tts_service
 
@@ -21,35 +26,90 @@ _CACHE_TTL = 7 * 24 * 3_600  # 7 days in seconds
 # Number of example sentences to fetch per word.
 _EXAMPLE_COUNT = 3
 
+logger = logging.getLogger(__name__)
+
 
 def _build_cache_key(lang_code: str, word: str) -> str:
     """Construct a deterministic Redis key for a word translation."""
     return f"{_CACHE_PREFIX}{lang_code}:{word.lower()}"
 
 
-async def _translate_word(word: str, source_lang: str) -> str:
+async def _translate_word_via_rest(text: str, source_lang: str) -> Optional[str]:
     """
-    Call Google Cloud Translation API to translate *word* to Uzbek ('uz').
+    Call Google Translation REST API using GOOGLE_API_KEY.
+    """
+    if not settings.GOOGLE_API_KEY:
+        return None
 
-    Returns the translated string, or the original word on failure.
+    try:
+        endpoint = "https://translation.googleapis.com/language/translate/v2"
+        payload = {
+            "q": text,
+            "source": source_lang,
+            "target": "uz",
+            "format": "text",
+        }
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            response = await client.post(
+                endpoint,
+                params={"key": settings.GOOGLE_API_KEY},
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        translated = (
+            data.get("data", {})
+            .get("translations", [{}])[0]
+            .get("translatedText")
+        )
+        if not translated:
+            return None
+        return html.unescape(translated)
+    except Exception as exc:
+        logger.warning("Google Translate REST failed: %s", exc)
+        return None
+
+
+async def _translate_word_via_client(text: str, source_lang: str) -> Optional[str]:
+    """
+    Fallback translation using google-cloud-translate client + ADC credentials.
     """
     try:
+        import asyncio
         from google.cloud import translate_v2 as translate
 
-        # Initialise a synchronous client (v2 does not have a native async client).
-        import asyncio
         client = translate.Client()
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: client.translate(
-                word,
+                text,
                 source_language=source_lang,
                 target_language="uz",
             ),
         )
-        return result.get("translatedText", word)
-    except Exception:
-        return word
+        translated = result.get("translatedText")
+        if not translated:
+            return None
+        return html.unescape(translated)
+    except Exception as exc:
+        logger.warning("Google Translate client fallback failed: %s", exc)
+        return None
+
+
+async def _translate_word(word: str, source_lang: str) -> str:
+    """
+    Translate *word* to Uzbek.
+    """
+    translated = await _translate_word_via_rest(word, source_lang)
+    if translated:
+        return translated
+
+    translated = await _translate_word_via_client(word, source_lang)
+    if translated:
+        return translated
+
+    return word
 
 
 async def _get_example_sentences(
@@ -69,30 +129,13 @@ async def _get_example_sentences(
     ]
 
     examples: List[Dict[str, str]] = []
-    try:
-        from google.cloud import translate_v2 as translate
-        import asyncio
-        client = translate.Client()
-
-        for sentence in templates[:_EXAMPLE_COUNT]:
-            # Translate each template from the source language to Uzbek.
-            result = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda s=sentence: client.translate(
-                    s,
-                    source_language=lang_code,
-                    target_language="uz",
-                ),
-            )
-            examples.append(
-                {
-                    "sentence": sentence,
-                    "translation": result.get("translatedText", ""),
-                }
-            )
-    except Exception:
-        # Example sentences are supplementary — don't fail the request.
-        pass
+    for sentence in templates[:_EXAMPLE_COUNT]:
+        translation = await _translate_word_via_rest(sentence, lang_code)
+        if not translation:
+            translation = await _translate_word_via_client(sentence, lang_code)
+        if not translation:
+            translation = ""
+        examples.append({"sentence": sentence, "translation": translation})
 
     return examples
 
@@ -134,9 +177,11 @@ async def translate_word(
     examples = await _get_example_sentences(word, lang_code)
 
     # --- Step 5: Generate TTS pronunciation URL ---
-    # BCP-47 code: "en" → "en-US", "de" → "de-DE", etc.
-    bcp47 = f"{lang_code}-{lang_code.upper()}" if len(lang_code) == 2 else lang_code
-    pronunciation_url = await tts_service.synthesise(word, language_code=bcp47)
+    try:
+        pronunciation_url = await tts_service.synthesise(word, language_code=lang_code)
+    except Exception as exc:
+        logger.warning("TTS generation failed for '%s': %s", word, exc)
+        pronunciation_url = None
 
     # --- Step 6: Build and cache result ---
     result: Dict[str, Any] = {

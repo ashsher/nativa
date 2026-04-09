@@ -74,8 +74,6 @@ async def upload_file(key: str, data: bytes, content_type: str) -> str:
             Key=key,
             Body=data,
             ContentType=content_type,
-            # Make the object publicly readable via the CDN URL.
-            ACL="public-read",
         ),
     )
 

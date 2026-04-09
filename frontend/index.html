@@ -20,17 +20,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- CSS load order matters: variables first so all tokens are defined before they are used -->
-  <link rel="stylesheet" href="css/variables.css?v=20260408e" />   <!-- design tokens -->
-  <link rel="stylesheet" href="css/reset.css?v=20260408e" />        <!-- browser normalisation -->
-  <link rel="stylesheet" href="css/base.css?v=20260408e" />         <!-- global element styles -->
-  <link rel="stylesheet" href="css/components.css?v=20260408e" />   <!-- shared components: btn, badge, card, toast, popup -->
-  <link rel="stylesheet" href="css/video.css?v=20260408e" />        <!-- video mode specific styles -->
-  <link rel="stylesheet" href="css/reading.css?v=20260408e" />      <!-- reading mode specific styles -->
-  <link rel="stylesheet" href="css/vocabulary.css?v=20260408e" />   <!-- vocabulary / SRS styles -->
-  <link rel="stylesheet" href="css/speaking.css?v=20260408e" />     <!-- speaking partner styles -->
-  <link rel="stylesheet" href="css/profile.css?v=20260408e" />      <!-- profile form styles -->
-  <link rel="stylesheet" href="css/animations.css?v=20260408e" />   <!-- keyframes and motion utilities -->
-  <link rel="stylesheet" href="css/theme.css?v=20260408e" />        <!-- final visual theme overrides -->
+  <link rel="stylesheet" href="css/variables.css?v=20260408f" />   <!-- design tokens -->
+  <link rel="stylesheet" href="css/reset.css?v=20260408f" />        <!-- browser normalisation -->
+  <link rel="stylesheet" href="css/base.css?v=20260408f" />         <!-- global element styles -->
+  <link rel="stylesheet" href="css/components.css?v=20260408f" />   <!-- shared components: btn, badge, card, toast, popup -->
+  <link rel="stylesheet" href="css/video.css?v=20260408f" />        <!-- video mode specific styles -->
+  <link rel="stylesheet" href="css/reading.css?v=20260408f" />      <!-- reading mode specific styles -->
+  <link rel="stylesheet" href="css/vocabulary.css?v=20260408f" />   <!-- vocabulary / SRS styles -->
+  <link rel="stylesheet" href="css/speaking.css?v=20260408f" />     <!-- speaking partner styles -->
+  <link rel="stylesheet" href="css/profile.css?v=20260408f" />      <!-- profile form styles -->
+  <link rel="stylesheet" href="css/animations.css?v=20260408f" />   <!-- keyframes and motion utilities -->
+  <link rel="stylesheet" href="css/theme.css?v=20260408f" />        <!-- final visual theme overrides -->
 
   <title>Nativa</title>
 </head>
@@ -45,7 +45,7 @@
   <!-- ── APP HEADER ─────────────────────────────────────────── -->
   <!-- Sticky header: shows logo mark and the current tab title -->
   <header class="app-header">
-    <img class="app-header__logo" src="assets/logo.png?v=20260408e" alt="Nativa logotipi" />
+    <img class="app-header__logo" src="assets/logo.png?v=20260408f" alt="Nativa logotipi" />
     <!-- #page-title: updated by switchTab() in app.js to reflect the active section -->
     <h1 id="page-title" class="app-header__title">Video</h1>
   </header>
@@ -458,21 +458,21 @@
      and popup/ai_popup/payment before the feature modules that call them.
      ────────────────────────────────────────────────────────────────── -->
 <!-- API client: sets up window.Api with all endpoint helpers -->
-<script defer src="js/api.js?v=20260408e"></script>
+<script defer src="js/api.js?v=20260408f"></script>
 <!-- App shell: tab switching, Telegram SDK init, showToast -->
-<script defer src="js/app.js?v=20260408e"></script>
+<script defer src="js/app.js?v=20260408f"></script>
 <!-- Word translation popup module -->
-<script defer src="js/popup.js?v=20260408e"></script>
+<script defer src="js/popup.js?v=20260408f"></script>
 <!-- AI grammar explanation popup module -->
-<script defer src="js/ai_popup.js?v=20260408e"></script>
+<script defer src="js/ai_popup.js?v=20260408f"></script>
 <!-- Payment / upgrade modal module -->
-<script defer src="js/payment.js?v=20260408e"></script>
+<script defer src="js/payment.js?v=20260408f"></script>
 <!-- Feature modules (each handles one tab's logic) -->
-<script defer src="js/video.js?v=20260408e"></script>
-<script defer src="js/reading.js?v=20260408e"></script>
-<script defer src="js/vocabulary.js?v=20260408e"></script>
-<script defer src="js/speaking.js?v=20260408e"></script>
-<script defer src="js/profile.js?v=20260408e"></script>
+<script defer src="js/video.js?v=20260408f"></script>
+<script defer src="js/reading.js?v=20260408f"></script>
+<script defer src="js/vocabulary.js?v=20260408f"></script>
+<script defer src="js/speaking.js?v=20260408f"></script>
+<script defer src="js/profile.js?v=20260408f"></script>
 
 </body>
 </html>

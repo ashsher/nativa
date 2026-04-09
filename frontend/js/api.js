@@ -30,6 +30,16 @@ window.Api = (() => {
     return 1;
   }
 
+  function getActiveLanguageCode() {
+    const langs = window.currentUser && Array.isArray(window.currentUser.languages)
+      ? window.currentUser.languages
+      : [];
+    if (langs.length > 0 && langs[0] && typeof langs[0].code === 'string' && langs[0].code.trim()) {
+      return langs[0].code.trim().toLowerCase();
+    }
+    return 'en';
+  }
+
   async function request(method, path, body) {
     const headers = { 'Content-Type': 'application/json' };
 
@@ -105,7 +115,7 @@ window.Api = (() => {
     processVideo: (url, languageId = getActiveLanguageId()) =>
       request('POST', '/video/process', { url, language_id: languageId }),
 
-    translate: (word, langCode = 'en') =>
+    translate: (word, langCode = getActiveLanguageCode()) =>
       request(
         'GET',
         '/reading/translate?word=' + encodeURIComponent(word) + '&lang_code=' + encodeURIComponent(langCode)
