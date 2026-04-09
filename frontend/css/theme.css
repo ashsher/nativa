@@ -631,6 +631,101 @@ button {
   color: #475569;
 }
 
+/* ── AI Grammar Response ─────────────────────────────────────────────────── */
+
+.popup__quote {
+  font-size: 0.9rem;
+  font-style: italic;
+  border-left: 3px solid #2b7fff;
+  padding: 6px 10px;
+  margin: 0 0 12px;
+  background: #f0f6ff;
+  border-radius: 0 8px 8px 0;
+  color: #334155;
+}
+
+.ai-response {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-heading {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #2b7fff;
+  margin: 12px 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid #dbeafe;
+}
+
+.ai-heading--lg {
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #0f172a;
+  border-bottom-color: #e2e8f0;
+}
+
+.ai-heading--sm {
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.ai-heading:first-child {
+  margin-top: 2px;
+}
+
+.ai-para {
+  margin: 0;
+  color: #334155;
+}
+
+.ai-para--error {
+  color: #dc2626;
+}
+
+.ai-list {
+  margin: 2px 0 2px 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #334155;
+}
+
+.ai-list li {
+  line-height: 1.55;
+}
+
+.ai-list li::marker {
+  color: #2b7fff;
+}
+
+.ai-response strong {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ai-response em {
+  color: #475569;
+  font-style: italic;
+}
+
+.ai-code {
+  font-size: 0.82em;
+  background: #f1f5f9;
+  color: #1d4ed8;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
 .popup-backdrop,
 .modal__overlay,
 .modal-overlay {

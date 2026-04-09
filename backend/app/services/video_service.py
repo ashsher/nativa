@@ -1,13 +1,15 @@
 """
 app/services/video_service.py — YouTube video processing service.
 
-Fetches timed subtitles via youtube-transcript-api, tokenises each segment,
-retrieves metadata (title, duration) from YouTube Data API v3, persists a
-VideoSession record to the database, and returns a structured JSON payload.
+Fetches timed subtitles via yt-dlp (primary) with youtube-transcript-api as
+fallback, tokenises each segment, retrieves metadata (title, duration) from
+YouTube Data API v3, persists a VideoSession record to the database, and
+returns a structured JSON payload.
 """
 
 from __future__ import annotations
 
+import asyncio
 import html
 import re
 import xml.etree.ElementTree as ET
@@ -17,11 +19,6 @@ import httpx
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from youtube_transcript_api import (
-    NoTranscriptFound,
-    TranscriptsDisabled,
-    YouTubeTranscriptApi,
-)
 
 from app.config import settings
 from app.models.language import Language
@@ -30,10 +27,6 @@ from app.utils.tokeniser import tokenise_text
 
 # ---------------------------------------------------------------------------
 # Regex that matches any common YouTube URL format and captures the video ID.
-# Supported formats:
-#   https://www.youtube.com/watch?v=VIDEO_ID
-#   https://youtu.be/VIDEO_ID
-#   https://youtube.com/shorts/VIDEO_ID
 # ---------------------------------------------------------------------------
 _YT_URL_RE = re.compile(
     r"(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
@@ -63,7 +56,6 @@ async def _fetch_video_metadata(video_id: str) -> Dict[str, Any]:
     Returns a dict with keys 'title' and 'duration_seconds'.
     Falls back to empty values on API errors rather than aborting the request.
     """
-    # YouTube Data API v3 videos.list endpoint.
     api_url = (
         "https://www.googleapis.com/youtube/v3/videos"
         f"?id={video_id}&part=snippet,contentDetails&key={settings.YOUTUBE_API_KEY}"
@@ -81,20 +73,28 @@ async def _fetch_video_metadata(video_id: str) -> Dict[str, Any]:
         item = items[0]
         title: Optional[str] = item.get("snippet", {}).get("title")
 
-        # Parse ISO 8601 duration string (e.g. "PT4M13S") into total seconds.
         duration_str: str = item.get("contentDetails", {}).get("duration", "")
         duration_seconds = _parse_iso8601_duration(duration_str)
 
         return {"title": title, "duration_seconds": duration_seconds}
     except Exception:
-        # Non-fatal: return empty metadata rather than failing the whole request.
         return {"title": None, "duration_seconds": None}
 
 
+def _parse_iso8601_duration(duration: str) -> Optional[int]:
+    """Convert ISO 8601 duration string to total seconds."""
+    pattern = re.compile(
+        r"P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?"
+    )
+    match = pattern.match(duration)
+    if not match:
+        return None
+    days, hours, minutes, seconds = (int(v) if v else 0 for v in match.groups())
+    return days * 86_400 + hours * 3_600 + minutes * 60 + seconds
+
+
 def _normalise_transcript_items(items: list[Any]) -> list[dict[str, Any]]:
-    """
-    Convert transcript items to a consistent dict format.
-    """
+    """Convert transcript items (object or dict) to a consistent dict format."""
     normalised: list[dict[str, Any]] = []
     for item in items:
         if isinstance(item, dict):
@@ -117,16 +117,142 @@ def _normalise_transcript_items(items: list[Any]) -> list[dict[str, Any]]:
     return normalised
 
 
+# ---------------------------------------------------------------------------
+# PRIMARY: yt-dlp subtitle fetcher
+# ---------------------------------------------------------------------------
+
+def _parse_json3_subtitles(data: dict) -> list[dict[str, Any]]:
+    """
+    Parse YouTube JSON3 subtitle format into the standard list-of-dicts format.
+
+    JSON3 events look like:
+      {"tStartMs": 1234, "dDurationMs": 2000, "segs": [{"utf8": "Hello "}]}
+    """
+    items: list[dict[str, Any]] = []
+    for event in data.get("events", []):
+        segs = event.get("segs")
+        if not segs:
+            continue
+
+        start_ms = event.get("tStartMs", 0)
+        dur_ms = event.get("dDurationMs", 2000)
+
+        text = "".join(seg.get("utf8", "") for seg in segs)
+        text = text.replace("\n", " ").strip()
+
+        if not text:
+            continue
+
+        items.append(
+            {
+                "text": text,
+                "start": start_ms / 1000.0,
+                "duration": dur_ms / 1000.0,
+            }
+        )
+    return items
+
+
+async def _fetch_subtitles_ytdlp(
+    video_id: str,
+    preferred_langs: list[str],
+) -> list[dict[str, Any]]:
+    """
+    Fetch subtitles using yt-dlp.
+
+    yt-dlp uses YouTube's internal TV/Android clients which bypass the bot
+    detection that blocks youtube-transcript-api on VPS IP addresses.
+
+    Returns a list of subtitle dicts (text, start, duration) or [] on failure.
+    """
+    try:
+        import yt_dlp  # noqa: PLC0415
+    except ImportError:
+        return []
+
+    url = f"https://www.youtube.com/watch?v={video_id}"
+
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        # Use the TV embedded client — bypasses most bot detection
+        "extractor_args": {"youtube": {"player_client": ["tv_embedded", "web"]}},
+    }
+
+    def _extract() -> dict:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=False)
+
+    try:
+        info = await asyncio.get_event_loop().run_in_executor(None, _extract)
+    except Exception:
+        return []
+
+    # Try manual subtitles first, then auto-generated captions.
+    for sub_key in ("subtitles", "automatic_captions"):
+        subs: dict = info.get(sub_key) or {}
+
+        for lang in preferred_langs:
+            # Exact match first, then language prefix match (e.g. "en" → "en-US").
+            matched_lang: str | None = None
+            if lang in subs:
+                matched_lang = lang
+            else:
+                for available in subs:
+                    if available.lower().startswith(lang.lower()):
+                        matched_lang = available
+                        break
+
+            if not matched_lang:
+                continue
+
+            formats: list[dict] = subs[matched_lang]
+            if not formats:
+                continue
+
+            # Prefer json3 — easiest to parse.
+            fmt_url: str | None = None
+            for fmt in formats:
+                if fmt.get("ext") == "json3":
+                    fmt_url = fmt.get("url")
+                    break
+            if not fmt_url:
+                fmt_url = formats[0].get("url")
+
+            if not fmt_url:
+                continue
+
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.get(fmt_url)
+                    resp.raise_for_status()
+                    data = resp.json()
+                result = _parse_json3_subtitles(data)
+                if result:
+                    return result
+            except Exception:
+                continue
+
+    return []
+
+
+# ---------------------------------------------------------------------------
+# FALLBACK 1: youtube-transcript-api
+# ---------------------------------------------------------------------------
+
 def _fetch_best_available_transcript(
     video_id: str,
     preferred_lang_codes: list[str],
 ) -> list[dict[str, Any]]:
     """
-    Fetch transcript with robust fallback order:
-      1) preferred manual transcript,
-      2) preferred generated transcript,
-      3) any available transcript.
+    Fetch transcript via youtube-transcript-api with fallback order:
+      1) preferred manual transcript
+      2) preferred generated transcript
+      3) any available transcript
     """
+    from youtube_transcript_api import YouTubeTranscriptApi  # noqa: PLC0415
+
     transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
 
     for finder in (
@@ -139,7 +265,6 @@ def _fetch_best_available_transcript(
         except Exception:
             pass
 
-    # Final fallback: first available transcript in any language.
     for transcript in transcript_list:
         try:
             return _normalise_transcript_items(transcript.fetch())
@@ -149,15 +274,17 @@ def _fetch_best_available_transcript(
     return []
 
 
+# ---------------------------------------------------------------------------
+# FALLBACK 2: YouTube timedtext API (legacy)
+# ---------------------------------------------------------------------------
+
 async def _fetch_timedtext_fallback(
     video_id: str,
     preferred_lang_codes: list[str],
 ) -> list[dict[str, Any]]:
     """
-    Fallback caption retrieval using YouTube timedtext endpoints.
-
-    This helps in cases where youtube-transcript-api cannot resolve tracks
-    even though captions exist.
+    Last-resort caption retrieval using YouTube's old timedtext endpoint.
+    Helps in edge cases where both yt-dlp and youtube-transcript-api fail.
     """
     list_url = "https://www.youtube.com/api/timedtext"
 
@@ -239,33 +366,14 @@ async def _fetch_timedtext_fallback(
             if duration <= 0:
                 duration = 2.0
 
-            items.append(
-                {
-                    "text": text,
-                    "start": start,
-                    "duration": duration,
-                }
-            )
+            items.append({"text": text, "start": start, "duration": duration})
 
         return items
 
 
-def _parse_iso8601_duration(duration: str) -> Optional[int]:
-    """
-    Convert an ISO 8601 duration string to total seconds.
-
-    E.g. "PT1H2M3S" → 3723, "PT4M13S" → 253.
-    Returns None if the string cannot be parsed.
-    """
-    pattern = re.compile(
-        r"P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?"
-    )
-    match = pattern.match(duration)
-    if not match:
-        return None
-    days, hours, minutes, seconds = (int(v) if v else 0 for v in match.groups())
-    return days * 86_400 + hours * 3_600 + minutes * 60 + seconds
-
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
 
 async def process_video(
     url: str,
@@ -278,55 +386,46 @@ async def process_video(
 
     Steps:
       1. Validate URL and extract video ID.
-      2. Fetch timed subtitles via YouTubeTranscriptApi.
-      3. Tokenise each subtitle segment.
-      4. Fetch video metadata from YouTube Data API v3.
-      5. Persist a VideoSession record to the database.
-      6. Return structured payload.
-
-    Args:
-        url:         YouTube URL submitted by the user.
-        language_id: ID of the language the user is studying.
-        user_id:     Internal user ID for DB persistence.
-        db:          Async database session.
-
-    Returns:
-        Dict matching the VideoProcessResponse schema.
+      2. Resolve preferred subtitle language.
+      3. Fetch subtitles: yt-dlp → youtube-transcript-api → timedtext fallback.
+      4. Tokenise each subtitle segment.
+      5. Fetch video metadata from YouTube Data API v3.
+      6. Persist a VideoSession record to the database.
+      7. Return structured payload.
     """
-    # --- Step 1: Validate URL and extract video ID ---
+    # --- Step 1: Validate URL ---
     video_id = _extract_video_id(url)
 
-    # --- Step 2: Resolve preferred language code for subtitle search ---
+    # --- Step 2: Resolve preferred language ---
     lang_result = await db.execute(
         select(Language.code).where(Language.language_id == language_id)
     )
     preferred_code = lang_result.scalar_one_or_none() or "en"
 
     preferred_langs = [preferred_code, "en", "en-US", "en-GB", "ru", "uz"]
-    # Keep order while removing duplicates.
-    preferred_langs = list(dict.fromkeys(preferred_langs))
+    preferred_langs = list(dict.fromkeys(preferred_langs))  # dedup, preserve order
 
-    # --- Step 3: Fetch timed subtitles ---
-    # YouTubeTranscriptApi is synchronous; run in default thread pool.
-    import asyncio
+    # --- Step 3: Fetch subtitles with cascading fallbacks ---
 
-    transcript_error: str | None = None
-    try:
-        transcript_list = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: _fetch_best_available_transcript(video_id, preferred_langs),
-        )
-    except TranscriptsDisabled:
-        transcript_error = "disabled"
-        transcript_list = []
-    except NoTranscriptFound:
-        transcript_error = "not_found"
-        transcript_list = []
-    except Exception as exc:
-        transcript_error = str(exc)
-        transcript_list = []
+    # 3a. Primary: yt-dlp (uses internal YouTube clients, bypasses bot detection)
+    transcript_list = await _fetch_subtitles_ytdlp(video_id, preferred_langs)
 
-    # Step 3b: timedtext fallback for videos where transcript API misses captions.
+    # 3b. Fallback: youtube-transcript-api
+    if not transcript_list:
+        try:
+            from youtube_transcript_api import (  # noqa: PLC0415
+                NoTranscriptFound,
+                TranscriptsDisabled,
+            )
+
+            transcript_list = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: _fetch_best_available_transcript(video_id, preferred_langs),
+            )
+        except Exception:
+            transcript_list = []
+
+    # 3c. Last resort: legacy timedtext endpoint
     if not transcript_list:
         try:
             transcript_list = await _fetch_timedtext_fallback(video_id, preferred_langs)
@@ -334,13 +433,9 @@ async def process_video(
             transcript_list = []
 
     if not transcript_list:
-        if transcript_error == "disabled":
-            detail = "Bu video uchun subtitrlar o'chirib qo'yilgan."
-        else:
-            detail = "Bu video uchun subtitrlar topilmadi yoki o'qib bo'lmadi."
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=detail,
+            detail="Bu video uchun subtitrlar topilmadi yoki o'qib bo'lmadi.",
         )
 
     # --- Step 4: Tokenise each subtitle segment ---
@@ -359,7 +454,7 @@ async def process_video(
     # --- Step 5: Fetch video metadata ---
     metadata = await _fetch_video_metadata(video_id)
 
-    # --- Step 6: Persist VideoSession to the database ---
+    # --- Step 6: Persist VideoSession ---
     session = VideoSession(
         user_id=user_id,
         language_id=language_id,
@@ -369,9 +464,9 @@ async def process_video(
         subtitles_json=segments,
     )
     db.add(session)
-    await db.flush()  # Populate session_id before returning.
+    await db.flush()
 
-    # --- Step 7: Return structured payload ---
+    # --- Step 7: Return payload ---
     return {
         "session_id": session.session_id,
         "youtube_video_id": video_id,

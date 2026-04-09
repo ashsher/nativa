@@ -31,6 +31,7 @@ lxml==5.3.0
 
 # YouTube subtitle extraction
 youtube-transcript-api==0.6.2
+yt-dlp==2025.3.31
 
 # Google Cloud services
 google-cloud-translate==3.18.0

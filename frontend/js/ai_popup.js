@@ -1,131 +1,193 @@
 /**
  * ai_popup.js — AI Grammar Explanation popup module (IIFE pattern).
  *
- * Shows a bottom-sheet popup with a Gemini 1.5 Flash grammar explanation
- * for the user-selected text. Features a typewriter word-by-word animation
- * so the response feels like it is being written in real-time.
+ * Shows a bottom-sheet popup with a Gemini grammar explanation for the
+ * user-selected text. The response is parsed from markdown and rendered
+ * as styled HTML with a smooth fade-in animation.
  */
 
 const AiPopup = (() => {
-  // Handle for the typewriter setInterval; stored so we can cancel it on close.
-  let typewriterTimer = null;
+  // ── Inline markdown → HTML parser ────────────────────────────────────────
+
+  /**
+   * parseInline — convert inline markdown spans to HTML.
+   * Handles: **bold**, *italic*, `code`.
+   */
+  function parseInline(text) {
+    return text
+      // Bold: **text**
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic: *text* (only single asterisk now that bold is consumed)
+      .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
+      // Inline code: `text`
+      .replace(/`([^`]+?)`/g, '<code class="ai-code">$1</code>');
+  }
+
+  /**
+   * parseMarkdown — convert a markdown string to an HTML string.
+   *
+   * Supported syntax:
+   *   ## Heading 2   → <h4 class="ai-heading">
+   *   ### Heading 3  → <h5 class="ai-heading">
+   *   - item         → <ul><li>…</li></ul>
+   *   1. item        → <ol><li>…</li></ol>
+   *   blank line     → paragraph break
+   *   other text     → <p>…</p>
+   */
+  function parseMarkdown(text) {
+    const lines = text.split('\n');
+    let html = '';
+    let listType = null;   // 'ul' | 'ol' | null
+
+    const closeList = () => {
+      if (listType) {
+        html += `</${listType}>`;
+        listType = null;
+      }
+    };
+
+    for (const raw of lines) {
+      const line = raw.trimEnd();
+
+      // --- Unordered list item: "- text" or "• text" or "* text" ---
+      const ulMatch = line.match(/^[\-\*\•]\s+(.+)/);
+      if (ulMatch) {
+        if (listType !== 'ul') { closeList(); html += '<ul class="ai-list">'; listType = 'ul'; }
+        html += `<li>${parseInline(ulMatch[1])}</li>`;
+        continue;
+      }
+
+      // --- Ordered list item: "1. text" ---
+      const olMatch = line.match(/^\d+\.\s+(.+)/);
+      if (olMatch) {
+        if (listType !== 'ol') { closeList(); html += '<ol class="ai-list">'; listType = 'ol'; }
+        html += `<li>${parseInline(olMatch[1])}</li>`;
+        continue;
+      }
+
+      // For non-list lines, close any open list.
+      closeList();
+
+      // --- Heading level 2: "## text" ---
+      const h2Match = line.match(/^##\s+(.+)/);
+      if (h2Match) {
+        html += `<h4 class="ai-heading">${parseInline(h2Match[1])}</h4>`;
+        continue;
+      }
+
+      // --- Heading level 3: "### text" ---
+      const h3Match = line.match(/^###\s+(.+)/);
+      if (h3Match) {
+        html += `<h5 class="ai-heading ai-heading--sm">${parseInline(h3Match[1])}</h5>`;
+        continue;
+      }
+
+      // --- Heading level 1: "# text" ---
+      const h1Match = line.match(/^#\s+(.+)/);
+      if (h1Match) {
+        html += `<h3 class="ai-heading ai-heading--lg">${parseInline(h1Match[1])}</h3>`;
+        continue;
+      }
+
+      // --- Blank line → skip (implicit paragraph spacing via CSS gap) ---
+      if (line.trim() === '') continue;
+
+      // --- Normal paragraph ---
+      html += `<p class="ai-para">${parseInline(line)}</p>`;
+    }
+
+    closeList();
+    return html;
+  }
+
+  // ── Render with fade-in ───────────────────────────────────────────────────
+
+  /**
+   * renderResponse — parse markdown and display the AI response with a
+   * subtle fade-in + slide-up animation.
+   *
+   * @param {string}      text — raw markdown text from Gemini
+   * @param {HTMLElement} el   — target DOM element (#ai-response)
+   */
+  function renderResponse(text, el) {
+    el.innerHTML = parseMarkdown(text || '');
+
+    // Reset and trigger CSS animation
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    el.style.transition = 'none';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = 'opacity 380ms ease, transform 380ms ease';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      });
+    });
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
 
   /**
    * show — display the AI popup for the selected text.
-   * Shows the loading spinner immediately, then streams the Gemini response
-   * as a typewriter animation once received.
    *
    * @param {string} selectedText — the text the user highlighted
-   * @param {string} contextMode  — 'video' or 'reading' (passed to backend for context)
+   * @param {string} contextMode  — 'video' or 'reading'
    */
   async function show(selectedText, contextMode) {
-    // Display the selected text as a blockquote so the user knows what was analysed.
-    document.getElementById('ai-popup-quote').textContent = '"' + selectedText + '"';
+    // Display the quoted text
+    document.getElementById('ai-popup-quote').textContent = '\u201c' + selectedText + '\u201d';
 
-    // Clear any previous response text from the last usage.
-    document.getElementById('ai-response').textContent = '';
+    // Clear previous response
+    const responseEl = document.getElementById('ai-response');
+    responseEl.innerHTML = '';
+    responseEl.style.opacity = '0';
 
-    // Show the loading spinner while we wait for the Gemini API response.
+    // Show loading spinner
     document.getElementById('ai-loading').style.display = 'flex';
 
-    // Make the AI popup visible by removing the hidden class.
+    // Reveal the popup
     document.getElementById('ai-popup').classList.remove('popup--hidden');
-
-    // Show the backdrop behind the AI popup.
     document.getElementById('ai-popup-backdrop').classList.remove('popup-backdrop--hidden');
 
     try {
-      // Call the backend AI explain endpoint.
-      // The backend calls Gemini 1.5 Flash with the selected text and context mode.
       const data = await Api.explainAI(selectedText, contextMode);
 
-      // Hide the loading spinner once the response arrives.
       document.getElementById('ai-loading').style.display = 'none';
 
-      // Start the typewriter animation with the explanation text.
-      // data.explanation is the primary field; data.response is a fallback alias.
-      typewriterEffect(
+      renderResponse(
         data.explanation || data.response || '',
-        document.getElementById('ai-response')
+        responseEl
       );
     } catch (e) {
-      // Hide spinner on error (api.js already showed a toast).
       document.getElementById('ai-loading').style.display = 'none';
-      // Show a localised error message in the response area.
-      document.getElementById('ai-response').textContent = 'Javob olishda xatolik yuz berdi.';
+      responseEl.innerHTML = '<p class="ai-para ai-para--error">Javob olishda xatolik yuz berdi.</p>';
+      responseEl.style.opacity = '1';
     }
   }
 
   /**
-   * hide — close the AI popup, stop the typewriter, and clean up the selection.
+   * hide — close the AI popup and clean up.
    */
   function hide() {
-    // Add back the hidden class to dismiss the popup.
     document.getElementById('ai-popup').classList.add('popup--hidden');
-
-    // Hide the backdrop.
     document.getElementById('ai-popup-backdrop').classList.add('popup-backdrop--hidden');
 
-    // Stop the typewriter animation if it is still running.
-    if (typewriterTimer) {
-      clearInterval(typewriterTimer);
-      typewriterTimer = null;
-    }
-
-    // Also hide the floating AI button if it is still visible.
     const floatBtn = document.getElementById('ai-float-btn');
     if (floatBtn) floatBtn.style.display = 'none';
 
-    // Clear the text selection so the UI is clean after dismissing.
     if (window.getSelection) {
       window.getSelection().removeAllRanges();
     }
   }
 
-  /**
-   * typewriterEffect — animate text into a target element word-by-word.
-   * Splits the text on spaces and appends one word every 30ms, creating
-   * a reading-paced typewriter effect that feels like the AI is writing.
-   *
-   * @param {string}      text — the full explanation text to animate
-   * @param {HTMLElement} el   — the DOM element to write into
-   */
-  function typewriterEffect(text, el) {
-    // Split the full text into individual words, filtering out empty strings
-    // that result from consecutive spaces.
-    const words = text.split(' ').filter(w => w.length > 0);
-
-    // Word index counter; starts at 0 (first word).
-    let i = 0;
-
-    // Clear any existing text in the target element.
-    el.textContent = '';
-
-    // Start an interval that appends one word every 30ms.
-    typewriterTimer = setInterval(() => {
-      if (i < words.length) {
-        // Append the next word with a space before it (except the very first word).
-        el.textContent += (i > 0 ? ' ' : '') + words[i];
-        i++; // advance the word pointer
-      } else {
-        // All words have been displayed — stop the interval to free resources.
-        clearInterval(typewriterTimer);
-        typewriterTimer = null;
-      }
-    }, 30); // 30ms per word ≈ comfortable reading pace typewriter effect
-  }
-
-  // ── DOMContentLoaded: wire close controls ──────────────────────────────
+  // ── Wire close controls on DOM ready ─────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    // Close button inside the AI popup panel.
     document.getElementById('ai-popup-close-btn').addEventListener('click', hide);
-    // Backdrop click also closes the AI popup.
     document.getElementById('ai-popup-backdrop').addEventListener('click', hide);
   });
 
-  // Expose show() and hide() publicly.
   return { show, hide };
 })();
 
-// Assign to window so video.js and reading.js can call AiPopup.show().
 window.AiPopup = AiPopup;
