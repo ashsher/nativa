@@ -146,64 +146,92 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   INTEREST TAGS INPUT
-   Interactive chip-style tag input for interests.
+   INTEREST / HOBBY TAG CHIPS
+   Interactive chip-style tag input for interests and hobbies.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/** Tag input wrapper — the box that holds chips + the hidden input */
+.tag-input-container,
 .interest-tags-input {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-xs);
-  padding: var(--space-sm);
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
   background-color: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  min-height: 48px;
-  transition: border-color var(--transition-fast);
+  min-height: 50px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: text;
 }
 
+.tag-input-container:focus-within,
 .interest-tags-input:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 229, 160, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/** A selected interest tag chip */
+/** Inner chip rows */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/** A single removable chip pill */
+.tag-chip,
 .interest-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 0.2rem 0.6rem;
-  background-color: var(--color-accent-dim);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
-  color: var(--color-accent);
-  font-weight: 500;
+  gap: 5px;
+  padding: 4px 10px 4px 12px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-/** Remove button inside the tag */
+.tag-chip:hover,
+.interest-tag:hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+/** Remove × button inside each chip */
+.tag-chip__remove,
 .interest-tag__remove {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: rgba(0, 229, 160, 0.25);
-  color: var(--color-accent);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: rgba(37, 99, 235, 0.15);
+  color: #1d4ed8;
+  font-size: 0.65rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
   flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  border: none;
+  padding: 0;
+  line-height: 1;
 }
 
+.tag-chip__remove:hover,
 .interest-tag__remove:hover {
-  background-color: var(--color-accent);
-  color: #000;
+  background-color: #2563eb;
+  color: #fff;
 }
 
-/** Invisible input within the tags container */
+/** Inline text input inside the tag container */
+.tag-input,
 .interest-tags-input__input {
   border: none;
   outline: none;
@@ -211,8 +239,15 @@
   color: var(--color-text-primary);
   font-family: var(--font-body);
   font-size: 0.88rem;
-  min-width: 80px;
+  min-width: 100px;
   flex: 1;
+  padding: 4px 0;
+}
+
+.tag-input::placeholder,
+.interest-tags-input__input::placeholder {
+  color: var(--color-text-secondary);
+  font-weight: 400;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

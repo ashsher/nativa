@@ -105,10 +105,48 @@
   font-family: var(--font-body);
 }
 
-/** Currently playing segment — highlighted */
+/** Currently playing segment — highlighted (legacy class kept for compat) */
 .subtitle-highlight {
-  background-color: rgba(0, 229, 160, 0.07);
+  background-color: rgba(37, 99, 235, 0.07);
   border-left-color: var(--color-accent);
+}
+
+/** Currently playing segment — set by JS sync loop */
+.segment {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+  line-height: 1.9;
+  position: relative;
+}
+
+.segment--active {
+  background-color: rgba(37, 99, 235, 0.08);
+  border-left-color: var(--color-accent);
+}
+
+/** Animated "now playing" dot on the left edge */
+.segment--active::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  animation: subtitle-pulse 1.5s ease-out infinite;
+}
+
+@keyframes subtitle-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(37, 99, 235, 0.4); }
+  70%  { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(37, 99, 235, 0);   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
