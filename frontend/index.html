@@ -384,21 +384,20 @@
        Appears after the user selects text and taps "AI so'rang".
        ai_popup.js controls this with the same popup--hidden pattern.
        ──────────────────────────────────────────────────────────── -->
-  <div id="ai-popup" class="popup popup--hidden" role="dialog" aria-modal="true" aria-label="Grammatika izohi">
+  <div id="ai-popup" class="popup popup--hidden" role="dialog" aria-modal="true" aria-label="Grammatika tahlili">
     <div class="popup__handle"></div>
     <div class="popup__content">
       <!-- Close button -->
       <button class="popup__close-btn" id="ai-popup-close-btn" aria-label="Yopish">✕</button>
-      <!-- Section heading -->
-      <h3 class="popup__title">Grammatika izohi</h3>
-      <!-- The selected text displayed as a block-quote for context -->
-      <blockquote id="ai-popup-quote" class="popup__quote"></blockquote>
-      <!-- AI response text; filled by renderResponse() in ai_popup.js -->
+      <!-- Selected phrase shown as a reference label, not a chat quote -->
+      <div class="ai-phrase-label">Tahlil</div>
+      <div id="ai-popup-quote" class="ai-phrase"></div>
+      <!-- Grammar explanation; filled by renderResponse() in ai_popup.js -->
       <div id="ai-response" class="ai-response"></div>
-      <!-- Loading spinner: shown while waiting for AI response -->
+      <!-- Loading spinner: shown while waiting for explanation -->
       <div id="ai-loading" class="ai-loading" style="display:none">
         <div class="loader"></div>
-        <p>Javob tayyorlanmoqda...</p>
+        <p>Tahlil qilinmoqda...</p>
       </div>
     </div>
   </div>
@@ -446,9 +445,9 @@
        video.js and reading.js show/position this button on selection;
        clicking it opens the AI grammar popup.
        ──────────────────────────────────────────────────────────── -->
-  <button id="ai-float-btn" class="ai-float-btn" style="display:none" aria-label="AI grammatika tushuntirishi">
+  <button id="ai-float-btn" class="ai-float-btn" style="display:none" aria-label="Grammatika tahlili">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.937A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-    AI so'rang
+    Tahlil
   </button>
 
   <!-- ── TOAST NOTIFICATION ─────────────────────────────────────

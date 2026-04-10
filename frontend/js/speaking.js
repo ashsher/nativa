@@ -71,11 +71,20 @@ async function loadMatches() {
   renderPartnerList(matches);
 }
 
+// Avatar background/text colour palette — cycled by user_id.
+const _AVATAR_PALETTES = [
+  { bg: '#dbeafe', color: '#1d4ed8' },  // blue
+  { bg: '#dcfce7', color: '#16a34a' },  // green
+  { bg: '#fce7f3', color: '#be185d' },  // pink
+  { bg: '#fef3c7', color: '#b45309' },  // amber
+  { bg: '#f3e8ff', color: '#7c3aed' },  // purple
+];
+
 /**
  * renderPartnerList — build partner card DOM elements from the matches array.
  *
  * @param {Array} partners — array of match objects:
- *   { user_id, first_name, shared_interests, similarity_score }
+ *   { user_id, first_name, username, shared_interests, shared_hobbies, similarity_score }
  */
 function renderPartnerList(partners) {
   const listEl = document.getElementById('partner-list');
@@ -88,50 +97,72 @@ function renderPartnerList(partners) {
   const frag = document.createDocumentFragment();
 
   partners.forEach(partner => {
-    // Create the partner card container.
+    // ── Card shell ──────────────────────────────────────────────────────────
     const card = document.createElement('div');
     card.className = 'partner-card';
 
-    // Partner name in large Syne display font.
+    // ── Avatar (initials circle, colour-coded by user_id) ──────────────────
+    const palette = _AVATAR_PALETTES[(partner.user_id || 0) % _AVATAR_PALETTES.length];
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'partner-card__avatar-placeholder';
+    avatarEl.style.background = palette.bg;
+    avatarEl.style.color      = palette.color;
+    avatarEl.textContent = (partner.first_name || '?').charAt(0).toUpperCase();
+
+    // ── Body column ─────────────────────────────────────────────────────────
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'partner-card__body';
+
+    // Name + score pill on the same row.
+    const nameRowEl = document.createElement('div');
+    nameRowEl.className = 'partner-card__name-row';
+
     const nameEl = document.createElement('div');
     nameEl.className   = 'partner-card__name';
     nameEl.textContent = partner.first_name || 'Foydalanuvchi';
 
-    // Similarity score, e.g. "73% umumiy qiziqish".
-    const scoreEl = document.createElement('div');
-    scoreEl.className   = 'partner-card__score';
-    // Round the similarity score to nearest integer percentage.
     const pct = Math.round((partner.similarity_score || 0) * 100);
-    scoreEl.textContent = `${pct}% umumiy qiziqish`;
+    const scoreEl = document.createElement('span');
+    scoreEl.className   = 'partner-card__score';
+    scoreEl.textContent = `${pct}% mos`;
 
-    // Shared interests chips row.
+    nameRowEl.appendChild(nameEl);
+    nameRowEl.appendChild(scoreEl);
+
+    // @username line (only shown when available).
+    const usernameEl = document.createElement('div');
+    usernameEl.className   = 'partner-card__username';
+    usernameEl.textContent = partner.username ? `@${partner.username}` : '';
+
+    // Shared interests + hobbies as accent chips.
+    const allShared = [
+      ...(partner.shared_interests || []),
+      ...(partner.shared_hobbies   || []),
+    ];
     const chipsEl = document.createElement('div');
-    chipsEl.className = 'partner-card__chips';
-
-    // Render each shared interest as a small pill chip.
-    const sharedInterests = partner.shared_interests || [];
-    sharedInterests.forEach(interest => {
+    chipsEl.className = 'partner-card__interests';
+    allShared.forEach(tag => {
       const chip = document.createElement('span');
-      chip.className   = 'interest-chip';
-      chip.textContent = interest;
+      chip.className   = 'interest-chip is-match';
+      chip.textContent = tag;
       chipsEl.appendChild(chip);
     });
 
-    // "Yozish" (Write / Connect) button to initiate a Telegram conversation.
+    // "Yozish" (Write / Connect) button.
     const connectBtn = document.createElement('button');
-    connectBtn.className   = 'btn btn--primary btn--full';
+    connectBtn.className   = 'btn btn--primary partner-card__connect-btn';
     connectBtn.textContent = 'Yozish';
+    connectBtn.addEventListener('click', () => connectPartner(partner.user_id));
 
-    // Wire the connect button to call connectPartner with this partner's user_id.
-    connectBtn.addEventListener('click', () => {
-      connectPartner(partner.user_id);
-    });
+    // Assemble body.
+    bodyEl.appendChild(nameRowEl);
+    if (partner.username) bodyEl.appendChild(usernameEl);
+    if (allShared.length > 0) bodyEl.appendChild(chipsEl);
+    bodyEl.appendChild(connectBtn);
 
-    // Assemble the card.
-    card.appendChild(nameEl);
-    card.appendChild(scoreEl);
-    card.appendChild(chipsEl);
-    card.appendChild(connectBtn);
+    // Assemble card.
+    card.appendChild(avatarEl);
+    card.appendChild(bodyEl);
     frag.appendChild(card);
   });
 

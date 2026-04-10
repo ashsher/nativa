@@ -1,3 +1,9 @@
+/* ── Text selection — darker so highlighted text is clearly visible ────── */
+::selection {
+  background-color: rgba(37, 99, 235, 0.45);
+  color: #0f172a;
+}
+
 :root {
   --theme-primary: #2563eb;
   --theme-primary-strong: #1d4ed8;
@@ -238,6 +244,12 @@ button {
   box-shadow: 0 4px 12px -8px rgba(15, 23, 42, 0.45);
 }
 
+/* Video player state — flex column so video stays at top, subtitles scroll */
+.video-player-state {
+  display: flex !important;
+  flex-direction: column;
+}
+
 .subtitle-panel,
 .article-container,
 .vocab-list,
@@ -250,6 +262,12 @@ button {
   border-radius: 18px;
   background: #ffffff;
   padding: 14px;
+}
+
+/* Subtitle panel — fixed height so it scrolls while the video stays visible */
+.subtitle-panel {
+  max-height: 52vh;
+  overflow-y: auto;
 }
 
 .subtitle-segment,
@@ -562,6 +580,24 @@ button {
   margin-top: 4px;
 }
 
+/* Reading input state — flex column so children are evenly spaced */
+.reading-input-state {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Reading article header — stats on left, back button on right */
+.reading-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
 .profile-header {
   border-bottom: 1px solid #e2e8f0;
   padding-bottom: 16px;
@@ -827,6 +863,7 @@ button {
 
 /* ── AI Grammar Response ─────────────────────────────────────────────────── */
 
+/* Legacy blockquote — keep for word-popup compatibility */
 .popup__quote {
   font-size: 0.9rem;
   font-style: italic;
@@ -836,6 +873,30 @@ button {
   background: #f0f6ff;
   border-radius: 0 8px 8px 0;
   color: #334155;
+}
+
+/* AI grammar panel — reference card style */
+.ai-phrase-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #2563eb;
+  margin-bottom: 4px;
+  margin-top: 2px;
+}
+
+.ai-phrase {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: "Cal Sans", "Inter", sans-serif;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  padding: 8px 10px;
+  background: #f0f6ff;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  line-height: 1.35;
 }
 
 .ai-response {
