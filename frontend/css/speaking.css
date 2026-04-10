@@ -6,7 +6,6 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PARTNER LIST
-   Scrollable grid/list of potential conversation partners.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .partner-list {
@@ -18,70 +17,54 @@
   flex: 1;
 }
 
+.speak-empty-msg {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    PARTNER CARD
-   Profile card showing avatar, name, languages, and interests.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .partner-card {
-  display: flex;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition:
-    border-color var(--transition-fast),
-    background-color var(--transition-fast);
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px -10px rgba(37, 99, 235, 0.18);
+  transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
 .partner-card:hover {
-  border-color: var(--color-border-active);
-  background-color: var(--color-surface-elevated);
+  box-shadow: 0 8px 28px -10px rgba(37, 99, 235, 0.28);
+  transform: translateY(-2px);
 }
 
-/** Round avatar image */
-.partner-card__avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  background-color: var(--color-surface-elevated);
-  /* Accent ring on premium users */
-  border: 2px solid transparent;
+/* ── Similarity score progress bar at the very top of the card ── */
+.partner-card__score-bar {
+  height: 4px;
+  background: #eff6ff;
+  width: 100%;
 }
 
-.partner-card__avatar.is-premium {
-  border-color: var(--color-accent);
+.partner-card__score-fill {
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  transition: width 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/** Fallback initials avatar when no photo */
-.partner-card__avatar-placeholder {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background-color: var(--color-surface-elevated);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--color-accent);
-  flex-shrink: 0;
-}
-
-/** Text content column */
+/* ── Body ── */
 .partner-card__body {
-  flex: 1;
-  min-width: 0;
+  padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
-/** Name + score on one row */
+/* Name + score pill on the same row */
 .partner-card__name-row {
   display: flex;
   align-items: center;
@@ -92,86 +75,78 @@
 /** User's display name */
 .partner-card__name {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+  letter-spacing: -0.01em;
 }
 
-/** Telegram @username */
+/** Telegram @username — dark enough to read */
 .partner-card__username {
-  font-size: 0.78rem;
-  color: var(--color-text-secondary);
-  font-weight: 400;
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
 }
 
-/** Language learning info (e.g. "EN → DE") */
-.partner-card__langs {
-  font-size: 0.78rem;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-}
-
-/** Row of interest chips */
-.partner-card__interests {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 2px;
-}
-
-/** Similarity score badge — inline pill next to name */
+/** Similarity score badge */
 .partner-card__score {
-  font-size: 0.7rem;
-  color: var(--color-accent);
-  background-color: var(--color-accent-dim);
-  padding: 0.12rem 0.45rem;
-  border-radius: var(--radius-full);
+  font-size: 0.72rem;
   font-weight: 700;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 3px 9px;
+  border-radius: 999px;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-/** Connect button inside the card body */
+/** Row of shared interest chips */
+.partner-card__interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+/** Connect button */
 .partner-card__connect-btn {
-  margin-top: 8px;
+  margin-top: 10px;
   align-self: flex-start;
-  padding: 0.45rem 1.1rem;
-  font-size: 0.85rem;
+  padding: 0.5rem 1.3rem;
+  font-size: 0.86rem;
+  border-radius: 999px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    INTEREST CHIP
-   Small tag showing a shared interest topic.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .interest-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.18rem 0.55rem;
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface-elevated);
-  border: 1px solid var(--color-border);
-  font-size: 0.72rem;
-  color: var(--color-text-secondary);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 0.73rem;
+  color: #475569;
   font-weight: 500;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
 }
 
-/** Highlighted when this chip matches the user's own interests */
 .interest-chip.is-match {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  background-color: var(--color-accent-dim);
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CONNECT BUTTON
-   CTA button on the partner card.
+   CONNECT BUTTON (standalone variant used outside cards)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .connect-btn {
@@ -200,7 +175,6 @@
   transform: scale(0.95);
 }
 
-/** Button state when a request has been sent */
 .connect-btn.is-pending {
   background-color: var(--color-surface-elevated);
   color: var(--color-text-secondary);
@@ -210,7 +184,6 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MATCH STATUS BADGE
-   Shows the current connection state.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .match-status {
@@ -250,7 +223,6 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SPEAKING FILTER BAR
-   Language filter chips at top of the speaking view.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .speaking-filter-bar {

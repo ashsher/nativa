@@ -2,8 +2,12 @@
  * speaking.js — Speaking partners module.
  *
  * Loads matched speaking partners from the backend (scored by shared interests),
- * renders partner cards, and connects two users via a Telegram deep link.
+ * filters to ≥ 51% similarity, renders partner cards, and connects two users
+ * via a Telegram deep link.
  */
+
+/** Minimum similarity score (0–1) required to show a partner. */
+const MIN_SIMILARITY = 0.51;
 
 /**
  * renderSpeakingView — called by app.js onTabActivated('speak').
@@ -14,71 +18,56 @@ function renderSpeakingView() {
   if (!renderSpeakingView._wired) {
     renderSpeakingView._wired = true;
 
-    // The empty-state button sends the user to the profile tab to add interests.
     const goToProfileBtn = document.getElementById('go-to-profile-btn');
     if (goToProfileBtn) {
       goToProfileBtn.addEventListener('click', () => {
-        // Switch to the profile tab so the user can fill in their interests.
         if (typeof switchTab === 'function') switchTab('profile');
       });
     }
   }
 
-  // Load speaking partner matches from the backend.
   loadMatches();
 }
 
 /**
- * loadMatches — fetch partner matches from the backend and render them.
- * If no matches are returned and the user has no interests, show the empty state.
+ * loadMatches — fetch partner matches from the backend, filter by similarity,
+ * and render them. Shows the empty state when no qualified matches exist.
  */
 async function loadMatches() {
   let matches;
   try {
-    // Get matches ranked by Jaccard similarity of shared interests.
     matches = await Api.getMatches();
   } catch (e) {
-    // Error toast already shown by api.js.
     return;
   }
 
-  // Determine whether to show the empty state.
+  // Keep only partners with similarity ≥ 51 %.
+  const qualified = (matches || []).filter(
+    p => (p.similarity_score || 0) >= MIN_SIMILARITY
+  );
+
   const hasInterests = window.currentUser &&
     window.currentUser.interests &&
     window.currentUser.interests.length > 0;
 
-  // Hide both states before deciding which to show.
-  const partnerList  = document.getElementById('partner-list');
-  const emptyState   = document.getElementById('speak-empty-state');
+  const partnerList = document.getElementById('partner-list');
+  const emptyState  = document.getElementById('speak-empty-state');
 
-  if (!matches || matches.length === 0) {
-    // No matches found.
+  if (qualified.length === 0) {
     if (!hasInterests) {
-      // User hasn't filled in interests yet — prompt them to complete profile.
-      if (partnerList)  partnerList.innerHTML = '';
-      if (emptyState)   emptyState.style.display = 'block';
+      if (partnerList) partnerList.innerHTML = '';
+      if (emptyState)  emptyState.style.display = 'block';
     } else {
-      // User has interests but no matches yet — show a friendly message.
-      if (emptyState)   emptyState.style.display = 'none';
-      if (partnerList)  partnerList.innerHTML =
-        '<p class="text-secondary" style="text-align:center;padding:2rem 0;">Hozircha mos suhbat sherigi topilmadi. Keyinroq qaytib ko\'ring.</p>';
+      if (emptyState)  emptyState.style.display = 'none';
+      if (partnerList) partnerList.innerHTML =
+        '<p class="speak-empty-msg">Hozircha 51% dan yuqori mos suhbat sherigi topilmadi. Qiziqishlaringizni to\'ldirib, keyinroq qaytib ko\'ring.</p>';
     }
     return;
   }
 
-  // Matches found — hide the empty state and render the partner cards.
   if (emptyState) emptyState.style.display = 'none';
-  renderPartnerList(matches);
+  renderPartnerList(qualified);
 }
-
-// Avatar background/text colour palette — cycled by user_id.
-const _AVATAR_PALETTES = [
-  { bg: '#dbeafe', color: '#1d4ed8' },  // blue
-  { bg: '#dcfce7', color: '#16a34a' },  // green
-  { bg: '#fce7f3', color: '#be185d' },  // pink
-  { bg: '#fef3c7', color: '#b45309' },  // amber
-  { bg: '#f3e8ff', color: '#7c3aed' },  // purple
-];
 
 /**
  * renderPartnerList — build partner card DOM elements from the matches array.
@@ -90,30 +79,37 @@ function renderPartnerList(partners) {
   const listEl = document.getElementById('partner-list');
   if (!listEl) return;
 
-  // Clear previous partner cards.
   listEl.innerHTML = '';
-
-  // Build a document fragment for efficient insertion.
   const frag = document.createDocumentFragment();
 
   partners.forEach(partner => {
+    const pct = Math.round((partner.similarity_score || 0) * 100);
+
     // ── Card shell ──────────────────────────────────────────────────────────
     const card = document.createElement('div');
     card.className = 'partner-card';
 
-    // ── Avatar (initials circle, colour-coded by user_id) ──────────────────
-    const palette = _AVATAR_PALETTES[(partner.user_id || 0) % _AVATAR_PALETTES.length];
-    const avatarEl = document.createElement('div');
-    avatarEl.className = 'partner-card__avatar-placeholder';
-    avatarEl.style.background = palette.bg;
-    avatarEl.style.color      = palette.color;
-    avatarEl.textContent = (partner.first_name || '?').charAt(0).toUpperCase();
+    // ── Score bar at the top of the card ────────────────────────────────────
+    const scoreBar = document.createElement('div');
+    scoreBar.className = 'partner-card__score-bar';
 
-    // ── Body column ─────────────────────────────────────────────────────────
+    const scoreFill = document.createElement('div');
+    scoreFill.className = 'partner-card__score-fill';
+    scoreFill.style.width = `${pct}%`;
+    // Colour: green ≥ 75%, yellow ≥ 60%, blue otherwise.
+    scoreFill.style.background =
+      pct >= 75 ? 'linear-gradient(90deg,#16a34a,#22c55e)' :
+      pct >= 60 ? 'linear-gradient(90deg,#b45309,#f59e0b)' :
+                  'linear-gradient(90deg,#2563eb,#60a5fa)';
+
+    scoreBar.appendChild(scoreFill);
+    card.appendChild(scoreBar);
+
+    // ── Card body ────────────────────────────────────────────────────────────
     const bodyEl = document.createElement('div');
     bodyEl.className = 'partner-card__body';
 
-    // Name + score pill on the same row.
+    // Top row: name on the left, pct pill on the right.
     const nameRowEl = document.createElement('div');
     nameRowEl.className = 'partner-card__name-row';
 
@@ -121,7 +117,6 @@ function renderPartnerList(partners) {
     nameEl.className   = 'partner-card__name';
     nameEl.textContent = partner.first_name || 'Foydalanuvchi';
 
-    const pct = Math.round((partner.similarity_score || 0) * 100);
     const scoreEl = document.createElement('span');
     scoreEl.className   = 'partner-card__score';
     scoreEl.textContent = `${pct}% mos`;
@@ -129,12 +124,12 @@ function renderPartnerList(partners) {
     nameRowEl.appendChild(nameEl);
     nameRowEl.appendChild(scoreEl);
 
-    // @username line (only shown when available).
+    // @username line.
     const usernameEl = document.createElement('div');
     usernameEl.className   = 'partner-card__username';
     usernameEl.textContent = partner.username ? `@${partner.username}` : '';
 
-    // Shared interests + hobbies as accent chips.
+    // Shared interests + hobbies chips.
     const allShared = [
       ...(partner.shared_interests || []),
       ...(partner.shared_hobbies   || []),
@@ -148,7 +143,7 @@ function renderPartnerList(partners) {
       chipsEl.appendChild(chip);
     });
 
-    // "Yozish" (Write / Connect) button.
+    // "Yozish" button.
     const connectBtn = document.createElement('button');
     connectBtn.className   = 'btn btn--primary partner-card__connect-btn';
     connectBtn.textContent = 'Yozish';
@@ -160,8 +155,6 @@ function renderPartnerList(partners) {
     if (allShared.length > 0) bodyEl.appendChild(chipsEl);
     bodyEl.appendChild(connectBtn);
 
-    // Assemble card.
-    card.appendChild(avatarEl);
     card.appendChild(bodyEl);
     frag.appendChild(card);
   });
@@ -178,15 +171,11 @@ function renderPartnerList(partners) {
 async function connectPartner(targetUserId) {
   let data;
   try {
-    // POST to the backend to create the match record and get the deep link.
     data = await Api.connectSpeaker(targetUserId);
   } catch (e) {
-    // Error (including quota) handled by api.js.
     return;
   }
 
-  // Open the Telegram deep link using the Mini-App SDK.
-  // This opens a conversation with the matched user inside Telegram.
   if (data && data.telegram_deep_link) {
     window.Telegram.WebApp.openTelegramLink(data.telegram_deep_link);
   } else {

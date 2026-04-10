@@ -15,19 +15,21 @@ let _interests = [];
 let _hobbies   = [];
 
 // ── Curated suggestion lists ───────────────────────────────────────────────────
-// English tags — canonical strings used for Jaccard similarity scoring.
+// Labels are in Uzbek so complete beginners can understand and select them.
+// Values saved to the backend are also Uzbek so Jaccard similarity compares
+// the same canonical strings across all users.
 const INTERESTS_SUGGESTIONS = [
-  'Technology', 'Science', 'Art', 'Music', 'Sports', 'Movies', 'Books',
-  'Travel', 'Cooking', 'Photography', 'Gaming', 'Fashion', 'Business',
-  'History', 'Psychology', 'Health', 'Environment', 'Finance', 'Politics',
-  'Languages',
+  'Texnologiya', 'Fan', 'San\'at', 'Musiqa', 'Sport', 'Kino', 'Kitoblar',
+  'Sayohat', 'Oshpazlik', 'Fotografiya', 'O\'yinlar', 'Moda', 'Biznes',
+  'Tarix', 'Psixologiya', 'Sog\'liq', 'Tabiat', 'Moliya', 'Siyosat',
+  'Tillar',
 ];
 
 const HOBBIES_SUGGESTIONS = [
-  'Football', 'Basketball', 'Reading', 'Drawing', 'Singing', 'Dancing',
-  'Swimming', 'Hiking', 'Yoga', 'Coding', 'Gaming', 'Cooking',
-  'Photography', 'Cycling', 'Running', 'Chess', 'Writing', 'Traveling',
-  'Gardening', 'Fitness',
+  'Futbol', 'Basketbol', 'O\'qish', 'Rasm chizish', 'Qo\'shiq aytish', 'Raqsga tushish',
+  'Suzish', 'Sayr qilish', 'Yoga', 'Dasturlash', 'Video o\'yinlar', 'Pishirish',
+  'Fotografiya', 'Velosipedda yurish', 'Yugurish', 'Shaxmat', 'Yozish', 'Sayohat qilish',
+  'Bog\'dorchilik', 'Fitnes',
 ];
 
 /**

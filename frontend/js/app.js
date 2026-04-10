@@ -241,6 +241,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Expand the Mini-App to full-screen height (removes the default half-sheet view).
   twa.expand();
 
+  // Request true full-screen mode (hides Telegram header bar) — API v8.0+.
+  // Falls back silently on older clients that don't support it.
+  if (typeof twa.requestFullscreen === 'function') {
+    twa.requestFullscreen();
+  }
+
   // Apply the Telegram OS theme colours to blend with the user's Telegram UI.
   applyTelegramColorScheme();
 
