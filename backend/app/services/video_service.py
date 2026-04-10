@@ -512,6 +512,22 @@ async def process_video(
     # --- Step 1: Validate URL ---
     video_id = _extract_video_id(url)
 
+    # --- Step 1b: DB cache — serve from existing VideoSession if available ---
+    cached_result = await db.execute(
+        select(VideoSession)
+        .where(VideoSession.youtube_video_id == video_id)
+        .limit(1)
+    )
+    cached = cached_result.scalar_one_or_none()
+    if cached and cached.subtitles_json:
+        return {
+            "session_id": cached.session_id,
+            "youtube_video_id": video_id,
+            "title": cached.title,
+            "duration_seconds": cached.duration_seconds,
+            "segments": cached.subtitles_json,
+        }
+
     # --- Step 2: Resolve preferred language ---
     lang_result = await db.execute(
         select(Language.code).where(Language.language_id == language_id)
