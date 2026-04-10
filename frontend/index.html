@@ -275,16 +275,20 @@
             <!-- Chip pills rendered by profile.js renderTagChips() -->
             <div class="tags" id="interests-tags"></div>
             <!-- Typing here and pressing Enter or comma adds a chip -->
-            <input type="text" class="tag-input" id="interests-input" placeholder="Enter yoki vergul bilan qo'shing" />
+            <input type="text" class="tag-input" id="interests-input" placeholder="Quyidan tanlang yoki o'zingiz yozing" />
           </div>
+          <!-- Clickable suggestion chips: profile.js populates this -->
+          <div class="suggestion-chips" id="interests-suggestions"></div>
         </label>
 
         <!-- Hobbies tag chip input -->
         <label>Sevimli mashg'ulotlar
           <div class="tag-input-container" id="hobbies-container">
             <div class="tags" id="hobbies-tags"></div>
-            <input type="text" class="tag-input" id="hobbies-input" placeholder="Enter yoki vergul bilan qo'shing" />
+            <input type="text" class="tag-input" id="hobbies-input" placeholder="Quyidan tanlang yoki o'zingiz yozing" />
           </div>
+          <!-- Clickable suggestion chips: profile.js populates this -->
+          <div class="suggestion-chips" id="hobbies-suggestions"></div>
         </label>
 
         <!-- Save profile button: profile.js wires this to submitProfile() -->
@@ -483,7 +487,7 @@
 <script defer src="js/reading.js?v=20260409b"></script>
 <script defer src="js/vocabulary.js?v=20260409b"></script>
 <script defer src="js/speaking.js?v=20260409b"></script>
-<script defer src="js/profile.js?v=20260409b"></script>
+<script defer src="js/profile.js?v=20260410"></script>
 <!-- Curated starter content: recommended videos + articles injected on DOMContentLoaded -->
 <script defer src="js/recommendations.js?v=20260410"></script>
 

@@ -633,6 +633,47 @@ button {
   border-radius: 999px;
 }
 
+/* Speaking partner @username — dark enough to read on the white card */
+.partner-card__username {
+  color: #334155 !important;
+  font-weight: 500 !important;
+}
+
+/* ── Profile suggestion chips ─────────────────────────────────────────────── */
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1.5px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  user-select: none;
+}
+
+.suggestion-chip:hover {
+  background: #dbeafe;
+  border-color: #2563eb;
+}
+
+.suggestion-chip.is-selected {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  cursor: default;
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;

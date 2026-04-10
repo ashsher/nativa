@@ -14,6 +14,22 @@
 let _interests = [];
 let _hobbies   = [];
 
+// ── Curated suggestion lists ───────────────────────────────────────────────────
+// English tags — canonical strings used for Jaccard similarity scoring.
+const INTERESTS_SUGGESTIONS = [
+  'Technology', 'Science', 'Art', 'Music', 'Sports', 'Movies', 'Books',
+  'Travel', 'Cooking', 'Photography', 'Gaming', 'Fashion', 'Business',
+  'History', 'Psychology', 'Health', 'Environment', 'Finance', 'Politics',
+  'Languages',
+];
+
+const HOBBIES_SUGGESTIONS = [
+  'Football', 'Basketball', 'Reading', 'Drawing', 'Singing', 'Dancing',
+  'Swimming', 'Hiking', 'Yoga', 'Coding', 'Gaming', 'Cooking',
+  'Photography', 'Cycling', 'Running', 'Chess', 'Writing', 'Traveling',
+  'Gardening', 'Fitness',
+];
+
 /**
  * renderProfileView â€” called by app.js onTabActivated('profile').
  * Wires form events once and loads the profile.
@@ -85,16 +101,24 @@ async function loadProfile() {
   const removeInterestTag = (removed) => {
     _interests = _interests.filter(t => t !== removed);
     renderTagChips('interests-tags', _interests, removeInterestTag);
+    renderSuggestions('interests-suggestions', INTERESTS_SUGGESTIONS,
+      () => _interests, (v) => { _interests = v; }, 'interests-tags');
   };
   renderTagChips('interests-tags', _interests, removeInterestTag);
+  renderSuggestions('interests-suggestions', INTERESTS_SUGGESTIONS,
+    () => _interests, (v) => { _interests = v; }, 'interests-tags');
 
   // Pre-fill hobbies array and render chips.
   _hobbies = Array.isArray(user.hobbies) ? [...user.hobbies] : [];
   const removeHobbyTag = (removed) => {
     _hobbies = _hobbies.filter(t => t !== removed);
     renderTagChips('hobbies-tags', _hobbies, removeHobbyTag);
+    renderSuggestions('hobbies-suggestions', HOBBIES_SUGGESTIONS,
+      () => _hobbies, (v) => { _hobbies = v; }, 'hobbies-tags');
   };
   renderTagChips('hobbies-tags', _hobbies, removeHobbyTag);
+  renderSuggestions('hobbies-suggestions', HOBBIES_SUGGESTIONS,
+    () => _hobbies, (v) => { _hobbies = v; }, 'hobbies-tags');
 
   // â”€â”€ Render the premium status section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderPremiumSection(user);
@@ -221,6 +245,58 @@ function wireTagInput(inputId, getArray, setArray, containerId) {
       // Clear the input field ready for the next tag.
       input.value = '';
     }
+  });
+}
+
+/**
+ * renderSuggestions — render a row of clickable preset chips below a tag input.
+ * Selected chips turn solid blue; clicking again does nothing (already added).
+ *
+ * @param {string}   containerId — ID of the .suggestion-chips div
+ * @param {string[]} suggestions — full list of suggestion strings
+ * @param {Function} getArray    — returns the current tag array
+ * @param {Function} setArray    — replaces the tag array
+ * @param {string}   tagsId     — ID of the .tags container to re-render
+ */
+function renderSuggestions(containerId, suggestions, getArray, setArray, tagsId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  suggestions.forEach(tag => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.textContent = tag;
+    chip.className = 'suggestion-chip';
+
+    const current = getArray();
+    if (current.some(t => t.toLowerCase() === tag.toLowerCase())) {
+      chip.classList.add('is-selected');
+    }
+
+    chip.addEventListener('click', () => {
+      const arr = getArray();
+      if (arr.some(t => t.toLowerCase() === tag.toLowerCase())) return; // already added
+
+      const updated = [...arr, tag];
+      setArray(updated);
+
+      // Re-render the tag chips with the new array.
+      const onRemove = (removed) => {
+        const after = getArray().filter(t => t !== removed);
+        setArray(after);
+        renderTagChips(tagsId, after, onRemove);
+        // Refresh suggestion chips so the removed one becomes unselected again.
+        renderSuggestions(containerId, suggestions, getArray, setArray, tagsId);
+      };
+      renderTagChips(tagsId, updated, onRemove);
+
+      // Mark this chip as selected.
+      renderSuggestions(containerId, suggestions, getArray, setArray, tagsId);
+    });
+
+    container.appendChild(chip);
   });
 }
 
