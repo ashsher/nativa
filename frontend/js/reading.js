@@ -244,16 +244,21 @@ function showReadingLoadingSkeleton() {
 /**
  * wireReadingSelectionHandler — listen for text selection inside the article
  * container and show the floating AI button for grammar explanations.
- * Mirrors the same logic in video.js but scoped to the article container.
+ *
+ * Uses both selectionchange (desktop) and touchend (mobile/Telegram WebView).
+ * On mobile, selectionchange fires while the finger is still moving and the
+ * selection rect is not yet settled, so we re-evaluate after touchend.
  */
 function wireReadingSelectionHandler() {
-  // Listen globally; filter to article container.
-  document.addEventListener('selectionchange', () => {
+  /**
+   * tryShowAiButton — check the current selection and show/position the
+   * floating AI button if the selection is inside the article container.
+   */
+  function tryShowAiButton() {
     const btn = document.getElementById('ai-float-btn');
     if (!btn) return;
 
     const sel = window.getSelection();
-    // If nothing is selected, hide the AI float button.
     if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) {
       btn.style.display = 'none';
       return;
@@ -267,11 +272,11 @@ function wireReadingSelectionHandler() {
       return;
     }
 
-    // Check if the selection is inside the article container.
+    // Only activate inside the article container.
     const container = document.getElementById('article-container');
     if (!container || !container.contains(range.commonAncestorContainer)) {
       btn.style.display = 'none';
-      return; // selection is outside article; don't interfere
+      return;
     }
 
     const selectedText = sel.toString().trim();
@@ -280,32 +285,50 @@ function wireReadingSelectionHandler() {
       return;
     }
 
-    // Position the floating AI button near the selection.
     const rect = range.getBoundingClientRect();
 
-    // Show button just above the selection.
-    btn.style.display = 'block';
-    btn.style.position = 'fixed';
-    btn.style.zIndex = '430';
+    // rect can be zeroed on mobile while the finger is still down — bail.
+    if (rect.width === 0 && rect.height === 0) return;
 
-    const margin = 8;
-    const top = Math.max(margin, rect.top - 44);
-    const maxLeft = Math.max(margin, window.innerWidth - btn.offsetWidth - margin);
-    const left = Math.min(maxLeft, Math.max(margin, rect.left));
+    // Make button temporarily visible so offsetWidth is accurate.
+    btn.style.visibility = 'hidden';
+    btn.style.display    = 'inline-flex';
 
-    btn.style.top = `${top}px`;
-    btn.style.left = `${left}px`;
+    const margin  = 10;
+    const btnW    = btn.offsetWidth  || 90;
+    const btnH    = btn.offsetHeight || 38;
+
+    // Prefer above the selection; fall back to below if too close to top.
+    let top = rect.top - btnH - margin;
+    if (top < margin) top = rect.bottom + margin;
+
+    const left = Math.min(
+      Math.max(margin, rect.left + rect.width / 2 - btnW / 2),
+      window.innerWidth - btnW - margin
+    );
+
+    btn.style.position   = 'fixed';
+    btn.style.zIndex     = '430';
+    btn.style.top        = `${top}px`;
+    btn.style.left       = `${left}px`;
+    btn.style.visibility = 'visible';
     btn.dataset.selection = selectedText;
 
-    // Replace click handler each time to capture the current selection text.
     btn.onclick = (event) => {
       event.preventDefault();
       const text = (btn.dataset.selection || '').trim();
       if (!text) return;
-      // Open AI popup in 'reading' context.
       if (window.AiPopup) AiPopup.show(text, 'reading');
-      // Hide the floating button immediately.
       btn.style.display = 'none';
     };
-  });
+  }
+
+  // Desktop: selectionchange fires reliably after mouse-up.
+  document.addEventListener('selectionchange', tryShowAiButton);
+
+  // Mobile: re-evaluate after the finger lifts so the rect is settled.
+  document.addEventListener('touchend', () => {
+    // Small delay lets the browser finalise the selection geometry.
+    setTimeout(tryShowAiButton, 120);
+  }, { passive: true });
 }
