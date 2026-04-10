@@ -76,6 +76,8 @@
           <!-- video.js listens for click on this button to call submitVideoURL() -->
           <button class="btn btn--primary" id="video-submit-btn">Boshlash</button>
         </div>
+        <!-- Curated starter videos: populated by recommendations.js -->
+        <div id="recommended-videos"></div>
       </div>
 
       <!-- Player state: hidden until a video has been processed by the backend -->
@@ -120,6 +122,8 @@
 
         <!-- Submit button: reading.js calls submitReading() on click -->
         <button class="btn btn--primary" id="reading-submit-btn">O'qishni boshlash</button>
+        <!-- Curated starter articles: populated by recommendations.js -->
+        <div id="recommended-articles"></div>
       </div>
 
       <!-- Article state: hidden until article is processed -->
@@ -480,6 +484,8 @@
 <script defer src="js/vocabulary.js?v=20260409b"></script>
 <script defer src="js/speaking.js?v=20260409b"></script>
 <script defer src="js/profile.js?v=20260409b"></script>
+<!-- Curated starter content: recommended videos + articles injected on DOMContentLoaded -->
+<script defer src="js/recommendations.js?v=20260410"></script>
 
 </body>
 </html>
