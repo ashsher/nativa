@@ -50,10 +50,12 @@ function renderProfileView() {
       });
     }
 
-    // Wire the interests tag input.
+    // Wire the interests and hobbies tag inputs (Enter/comma to add).
     wireTagInput('interests-input', () => _interests, (tags) => { _interests = tags; }, 'interests-tags');
-    // Wire the hobbies tag input.
     wireTagInput('hobbies-input',   () => _hobbies,   (tags) => { _hobbies   = tags; }, 'hobbies-tags');
+
+    // Wire settings modal open/close.
+    wireSettingsModal();
   }
 
   // Load fresh profile data from the backend.
@@ -75,30 +77,44 @@ async function loadProfile() {
     return;
   }
 
-  // â”€â”€ Render the display section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Full name from Telegram data.
+  // ── Identity ──────────────────────────────────────────────────────────────
   const fullNameEl = document.getElementById('profile-full-name');
   if (fullNameEl) {
-    // Combine first and last name, trimming trailing whitespace.
-    fullNameEl.textContent = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
+    fullNameEl.textContent = [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || 'Foydalanuvchi';
   }
 
-  // Telegram username, e.g. "@alisher".
   const usernameEl = document.getElementById('profile-username');
   if (usernameEl) {
     usernameEl.textContent = user.username ? '@' + user.username : '';
   }
 
-  // Render the avatar.
+  // Location line: city + country (shown below username in hero).
+  const locationEl = document.getElementById('profile-location');
+  if (locationEl) {
+    const parts = [user.city, user.country].filter(Boolean);
+    locationEl.textContent = parts.length ? parts.join(', ') : '';
+  }
+
+  // Avatar.
   renderAvatar(user);
 
-  // â”€â”€ Pre-fill the editable form fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Stats row ─────────────────────────────────────────────────────────────
+  const interestCount = Array.isArray(user.interests) ? user.interests.length : 0;
+  const hobbyCount    = Array.isArray(user.hobbies)   ? user.hobbies.length   : 0;
+  const statInterests = document.getElementById('stat-interests');
+  const statHobbies   = document.getElementById('stat-hobbies');
+  const statPlan      = document.getElementById('stat-plan');
+  if (statInterests) statInterests.textContent = interestCount;
+  if (statHobbies)   statHobbies.textContent   = hobbyCount;
+  if (statPlan)      statPlan.textContent       = user.is_premium ? 'Premium' : 'Bepul';
+
+  // ── Form fields ───────────────────────────────────────────────────────────
   const cityInput    = document.getElementById('profile-city');
   const countryInput = document.getElementById('profile-country');
   if (cityInput)    cityInput.value    = user.city    || '';
   if (countryInput) countryInput.value = user.country || '';
 
-  // Pre-fill interests array and render chips.
+  // Interests chips + suggestions.
   _interests = Array.isArray(user.interests) ? [...user.interests] : [];
   const removeInterestTag = (removed) => {
     _interests = _interests.filter(t => t !== removed);
@@ -110,7 +126,7 @@ async function loadProfile() {
   renderSuggestions('interests-suggestions', INTERESTS_SUGGESTIONS,
     () => _interests, (v) => { _interests = v; }, 'interests-tags');
 
-  // Pre-fill hobbies array and render chips.
+  // Hobbies chips + suggestions.
   _hobbies = Array.isArray(user.hobbies) ? [...user.hobbies] : [];
   const removeHobbyTag = (removed) => {
     _hobbies = _hobbies.filter(t => t !== removed);
@@ -122,7 +138,7 @@ async function loadProfile() {
   renderSuggestions('hobbies-suggestions', HOBBIES_SUGGESTIONS,
     () => _hobbies, (v) => { _hobbies = v; }, 'hobbies-tags');
 
-  // â”€â”€ Render the premium status section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Premium section.
   renderPremiumSection(user);
 }
 
@@ -277,25 +293,28 @@ function renderSuggestions(containerId, suggestions, getArray, setArray, tagsId)
       chip.classList.add('is-selected');
     }
 
-    chip.addEventListener('click', () => {
+    function activateChip() {
       const arr = getArray();
-      if (arr.some(t => t.toLowerCase() === tag.toLowerCase())) return; // already added
+      if (arr.some(t => t.toLowerCase() === tag.toLowerCase())) return;
 
       const updated = [...arr, tag];
       setArray(updated);
 
-      // Re-render the tag chips with the new array.
       const onRemove = (removed) => {
         const after = getArray().filter(t => t !== removed);
         setArray(after);
         renderTagChips(tagsId, after, onRemove);
-        // Refresh suggestion chips so the removed one becomes unselected again.
         renderSuggestions(containerId, suggestions, getArray, setArray, tagsId);
       };
       renderTagChips(tagsId, updated, onRemove);
-
-      // Mark this chip as selected.
       renderSuggestions(containerId, suggestions, getArray, setArray, tagsId);
+    }
+
+    // Support both click (desktop) and touchend (mobile Telegram WebView).
+    chip.addEventListener('click', activateChip);
+    chip.addEventListener('touchend', (e) => {
+      e.preventDefault(); // prevent the ghost click that follows touchend
+      activateChip();
     });
 
     container.appendChild(chip);
@@ -392,6 +411,62 @@ function renderPremiumSection(user) {
   if (upgradeBtn) {
     upgradeBtn.addEventListener('click', () => {
       if (window.Payment) Payment.showUpgradeModal('profile');
+    });
+  }
+}
+
+/**
+ * wireSettingsModal — open/close the settings modal and persist preference changes.
+ * Called once from renderProfileView().
+ */
+function wireSettingsModal() {
+  const openBtn  = document.getElementById('profile-settings-btn');
+  const modal    = document.getElementById('settings-modal');
+  const closeBtn = document.getElementById('settings-close-btn');
+  const overlay  = document.getElementById('settings-overlay');
+  if (!modal) return;
+
+  function openSettings() {
+    // Sync toggle states from localStorage before showing.
+    const autopauseEl  = document.getElementById('setting-autopause');
+    const similarityEl = document.getElementById('setting-similarity');
+    const descEl       = document.getElementById('similarity-desc');
+
+    if (autopauseEl) {
+      autopauseEl.checked = localStorage.getItem('nativa_autopause') === '1';
+    }
+    if (similarityEl) {
+      const saved = parseInt(localStorage.getItem('nativa_min_similarity') || '10', 10);
+      similarityEl.value = saved;
+      if (descEl) descEl.textContent = `Minimum moslik: ${saved}%`;
+    }
+    modal.classList.remove('modal--hidden');
+  }
+
+  function closeSettings() {
+    modal.classList.add('modal--hidden');
+  }
+
+  if (openBtn)  openBtn.addEventListener('click', openSettings);
+  if (closeBtn) closeBtn.addEventListener('click', closeSettings);
+  if (overlay)  overlay.addEventListener('click', closeSettings);
+
+  // Auto-pause toggle: persist to localStorage immediately.
+  const autopauseEl = document.getElementById('setting-autopause');
+  if (autopauseEl) {
+    autopauseEl.addEventListener('change', () => {
+      localStorage.setItem('nativa_autopause', autopauseEl.checked ? '1' : '0');
+    });
+  }
+
+  // Similarity slider: persist to localStorage and update label.
+  const similarityEl = document.getElementById('setting-similarity');
+  const descEl       = document.getElementById('similarity-desc');
+  if (similarityEl) {
+    similarityEl.addEventListener('input', () => {
+      const val = similarityEl.value;
+      localStorage.setItem('nativa_min_similarity', val);
+      if (descEl) descEl.textContent = `Minimum moslik: ${val}%`;
     });
   }
 }

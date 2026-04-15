@@ -16,7 +16,8 @@
 let _ytPlayer = null;
 
 // Whether auto-pause mode is currently enabled.
-let _autopauseEnabled = false;
+// Reads the user's saved preference from localStorage (set via Settings).
+let _autopauseEnabled = localStorage.getItem('nativa_autopause') === '1';
 
 // The subtitle segments array returned by the backend.
 // Each segment: { start, duration, tokens: [{ word, display }] }
@@ -59,9 +60,10 @@ function renderVideoView() {
     });
   }
 
-  // Wire the auto-pause toggle button.
+  // Wire the auto-pause toggle button and sync its label to the saved state.
   const autopauseBtn = document.getElementById('autopause-toggle');
   if (autopauseBtn) {
+    autopauseBtn.textContent = _autopauseEnabled ? "Avtopauza: Yoq" : "Avtopauza: O'ch";
     autopauseBtn.addEventListener('click', toggleAutopause);
   }
 
@@ -407,16 +409,15 @@ function hideVideoLoadingSkeleton() {
 /**
  * wireSelectionHandler — listen for text selection events inside the subtitle
  * panel and show the floating AI button near the selected text.
+ * Uses both selectionchange (desktop) and touchend (mobile/Telegram WebView).
  * Called once during renderVideoView().
  */
 function wireSelectionHandler() {
-  // Listen for selectionchange events globally; check if inside the subtitle panel.
-  document.addEventListener('selectionchange', () => {
+  function tryShowAiButton() {
     const btn = document.getElementById('ai-float-btn');
     if (!btn) return;
 
     const sel = window.getSelection();
-    // Hide the button if there's no selection or the selection is empty.
     if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) {
       btn.style.display = 'none';
       return;
@@ -430,10 +431,9 @@ function wireSelectionHandler() {
       return;
     }
 
-    // Check if the selection is inside the subtitle panel.
+    // Only activate inside the subtitle panel.
     const panel = document.getElementById('subtitle-panel');
     if (!panel || !panel.contains(range.commonAncestorContainer)) {
-      // Selection is outside the subtitle panel; hide the AI button.
       btn.style.display = 'none';
       return;
     }
@@ -444,32 +444,48 @@ function wireSelectionHandler() {
       return;
     }
 
-    // Get the bounding rect of the selection to position the button near it.
     const rect = range.getBoundingClientRect();
+    // rect can be zeroed on mobile while the finger is still down — bail.
+    if (rect.width === 0 && rect.height === 0) return;
 
-    // Position the button just above the selection with viewport-safe bounds.
-    btn.style.display = 'block';
-    btn.style.position = 'fixed';
-    btn.style.zIndex = '430';
+    // Make button temporarily visible so offsetWidth is accurate.
+    btn.style.visibility = 'hidden';
+    btn.style.display    = 'inline-flex';
 
     const margin = 8;
-    const top = Math.max(margin, rect.top - 44);
-    const maxLeft = Math.max(margin, window.innerWidth - btn.offsetWidth - margin);
-    const left = Math.min(maxLeft, Math.max(margin, rect.left));
+    const btnW   = btn.offsetWidth  || 90;
+    const btnH   = btn.offsetHeight || 38;
 
-    btn.style.top = `${top}px`;
-    btn.style.left = `${left}px`;
+    // Prefer above the selection; fall back to below if too close to top.
+    let top = rect.top - btnH - margin;
+    if (top < margin) top = rect.bottom + margin;
+
+    const left = Math.min(
+      Math.max(margin, rect.left + rect.width / 2 - btnW / 2),
+      window.innerWidth - btnW - margin
+    );
+
+    btn.style.position   = 'fixed';
+    btn.style.zIndex     = '430';
+    btn.style.top        = `${top}px`;
+    btn.style.left       = `${left}px`;
+    btn.style.visibility = 'visible';
     btn.dataset.selection = selectedText;
 
-    // Wire the click handler (replacing any previous handler).
     btn.onclick = (event) => {
       event.preventDefault();
       const text = (btn.dataset.selection || '').trim();
       if (!text) return;
-      // Open the AI grammar explanation popup in 'video' context.
       if (window.AiPopup) AiPopup.show(text, 'video');
-      // Hide the floating button after use.
       btn.style.display = 'none';
     };
-  });
+  }
+
+  // Desktop: selectionchange fires reliably after mouse-up.
+  document.addEventListener('selectionchange', tryShowAiButton);
+
+  // Mobile: re-evaluate after the finger lifts so the rect is settled.
+  document.addEventListener('touchend', () => {
+    setTimeout(tryShowAiButton, 120);
+  }, { passive: true });
 }

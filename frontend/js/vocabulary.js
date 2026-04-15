@@ -213,6 +213,26 @@ async function addWord() {
     return;
   }
 
+  // Basic format check: must look like an English word.
+  if (!/^[a-zA-Z][a-zA-Z'-]{0,48}[a-zA-Z]$|^[a-zA-Z]{1,2}$/.test(word)) {
+    showToast("Faqat inglizcha so'z kiriting.", 'error');
+    return;
+  }
+
+  // Check existence against the free dictionary API.
+  try {
+    const dictRes = await fetch(
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    if (!dictRes.ok) {
+      showToast(`"${word}" ingliz lug'atida topilmadi. Imlosini tekshiring.`, 'error');
+      return;
+    }
+  } catch (_) {
+    // Network/timeout — proceed anyway so offline users aren't blocked.
+  }
+
   try {
     // Get translation first because backend requires translation in payload.
     const translationData = await Api.translate(word);

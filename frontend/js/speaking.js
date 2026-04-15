@@ -6,8 +6,16 @@
  * via a Telegram deep link.
  */
 
-/** Minimum similarity score (0–1) required to show a partner. */
-const MIN_SIMILARITY = 0.51;
+/**
+ * getMinSimilarity — read the minimum similarity threshold from localStorage.
+ * Defaults to 10 % so users with even a couple of shared tags can find partners.
+ * Never returns 0 so fully-unrelated users are never shown.
+ */
+function getMinSimilarity() {
+  const stored = parseInt(localStorage.getItem('nativa_min_similarity') || '', 10);
+  if (!isNaN(stored) && stored > 0) return stored / 100;
+  return 0.10; // 10 % default
+}
 
 /**
  * renderSpeakingView — called by app.js onTabActivated('speak').
@@ -41,9 +49,9 @@ async function loadMatches() {
     return;
   }
 
-  // Keep only partners with similarity ≥ 51 %.
+  // Keep only partners above the minimum similarity threshold.
   const qualified = (matches || []).filter(
-    p => (p.similarity_score || 0) >= MIN_SIMILARITY
+    p => (p.similarity_score || 0) >= getMinSimilarity()
   );
 
   const hasInterests = window.currentUser &&

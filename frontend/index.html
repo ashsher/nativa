@@ -28,9 +28,9 @@
   <link rel="stylesheet" href="css/reading.css?v=20260410b" />      <!-- reading mode specific styles -->
   <link rel="stylesheet" href="css/vocabulary.css?v=20260410b" />   <!-- vocabulary / SRS styles -->
   <link rel="stylesheet" href="css/speaking.css?v=20260410b" />     <!-- speaking partner styles -->
-  <link rel="stylesheet" href="css/profile.css?v=20260410b" />      <!-- profile form styles -->
+  <link rel="stylesheet" href="css/profile.css?v=20260415" />      <!-- profile form styles -->
   <link rel="stylesheet" href="css/animations.css?v=20260410b" />   <!-- keyframes and motion utilities -->
-  <link rel="stylesheet" href="css/theme.css?v=20260410b" />        <!-- final visual theme overrides -->
+  <link rel="stylesheet" href="css/theme.css?v=20260415" />        <!-- final visual theme overrides -->
 
   <title>Nativa</title>
 </head>
@@ -240,59 +240,77 @@
 
     <!-- ══════════════════════════════════════════════════════
          PROFILE PANEL
-         Shows user info and an editable form.
+         Social-media style header with form below.
          ══════════════════════════════════════════════════════ -->
     <section id="panel-profile" class="tab-panel">
 
-      <!-- Display section: avatar + name (read-only) -->
-      <div class="profile-header">
-        <!-- Avatar: either Telegram photo or coloured initial circle (set by profile.js) -->
-        <div class="profile-avatar" id="profile-avatar"></div>
-        <div class="profile-name">
-          <!-- Full name from Telegram, e.g. "Alisher Navoiy" -->
-          <h2 id="profile-full-name"></h2>
-          <!-- Telegram username, e.g. "@alisher" -->
-          <span id="profile-username" class="text-secondary"></span>
+      <!-- ── Hero: cover gradient + avatar ── -->
+      <div class="profile-hero">
+        <div class="profile-hero__cover"></div>
+        <div class="profile-hero__avatar-wrap">
+          <!-- Avatar: Telegram photo or coloured initial circle (set by profile.js) -->
+          <div class="profile-avatar" id="profile-avatar"></div>
+        </div>
+        <!-- Settings button top-right of cover -->
+        <button class="profile-hero__settings-btn" id="profile-settings-btn" type="button" aria-label="Sozlamalar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ── Identity: name, username, location ── -->
+      <div class="profile-identity">
+        <h2 id="profile-full-name" class="profile-identity__name"></h2>
+        <p id="profile-username" class="profile-identity__username"></p>
+        <p id="profile-location" class="profile-identity__location"></p>
+      </div>
+
+      <!-- ── Stats row ── -->
+      <div class="profile-stats-row">
+        <div class="profile-stat">
+          <strong id="stat-interests">0</strong>
+          <span>Qiziqishlar</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat">
+          <strong id="stat-hobbies">0</strong>
+          <span>Mashg'ulotlar</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat">
+          <strong id="stat-plan">Bepul</strong>
+          <span>Reja</span>
         </div>
       </div>
 
-      <!-- Editable profile form -->
+      <!-- ── Editable profile form ── -->
       <form id="profile-form" class="profile-form" novalidate>
 
-        <!-- City input -->
-        <label>Shahar
+        <div class="profile-section-label">Joylashuv</div>
+        <label class="profile-field-label">Shahar
           <input type="text" id="profile-city" name="city" placeholder="Toshkent" autocomplete="off" />
         </label>
-
-        <!-- Country input -->
-        <label>Mamlakat
+        <label class="profile-field-label">Mamlakat
           <input type="text" id="profile-country" name="country" placeholder="O'zbekiston" autocomplete="off" />
         </label>
 
-        <!-- Interests tag chip input -->
-        <label>Qiziqishlar
-          <div class="tag-input-container" id="interests-container">
-            <!-- Chip pills rendered by profile.js renderTagChips() -->
-            <div class="tags" id="interests-tags"></div>
-            <!-- Typing here and pressing Enter or comma adds a chip -->
-            <input type="text" class="tag-input" id="interests-input" placeholder="Quyidan tanlang yoki o'zingiz yozing" />
-          </div>
-          <!-- Clickable suggestion chips: profile.js populates this -->
-          <div class="suggestion-chips" id="interests-suggestions"></div>
-        </label>
+        <div class="profile-section-label">Qiziqishlar</div>
+        <div class="tag-input-container" id="interests-container">
+          <div class="tags" id="interests-tags"></div>
+          <input type="text" class="tag-input" id="interests-input" placeholder="Yozing yoki quyidan tanlang" />
+        </div>
+        <div class="suggestion-chips" id="interests-suggestions"></div>
 
-        <!-- Hobbies tag chip input -->
-        <label>Sevimli mashg'ulotlar
-          <div class="tag-input-container" id="hobbies-container">
-            <div class="tags" id="hobbies-tags"></div>
-            <input type="text" class="tag-input" id="hobbies-input" placeholder="Quyidan tanlang yoki o'zingiz yozing" />
-          </div>
-          <!-- Clickable suggestion chips: profile.js populates this -->
-          <div class="suggestion-chips" id="hobbies-suggestions"></div>
-        </label>
+        <div class="profile-section-label">Sevimli mashg'ulotlar</div>
+        <div class="tag-input-container" id="hobbies-container">
+          <div class="tags" id="hobbies-tags"></div>
+          <input type="text" class="tag-input" id="hobbies-input" placeholder="Yozing yoki quyidan tanlang" />
+        </div>
+        <div class="suggestion-chips" id="hobbies-suggestions"></div>
 
-        <!-- Save profile button: profile.js wires this to submitProfile() -->
-        <button type="submit" class="btn btn--primary btn--full" id="profile-save-btn">Saqlash</button>
+        <button type="submit" class="btn btn--primary btn--full" id="profile-save-btn" style="margin-top:16px;">Saqlash</button>
       </form>
 
       <!-- Premium status section: rendered by profile.js renderPremiumSection() -->
@@ -465,6 +483,53 @@
        ──────────────────────────────────────────────────────────── -->
   <div id="toast" class="toast toast--hidden" role="status" aria-live="polite"></div>
 
+  <!-- ── SETTINGS MODAL ─────────────────────────────────────────
+       Opened from the profile page settings button.
+       profile.js controls open/close.
+       ──────────────────────────────────────────────────────────── -->
+  <div class="modal modal--hidden" id="settings-modal" role="dialog" aria-modal="true" aria-label="Sozlamalar">
+    <div class="modal__overlay modal-overlay" id="settings-overlay"></div>
+    <div class="modal__panel settings-panel">
+      <div class="settings-panel__head">
+        <h3 class="settings-panel__title">Sozlamalar</h3>
+        <button class="popup__close-btn" id="settings-close-btn" type="button" aria-label="Yopish">✕</button>
+      </div>
+      <div class="settings-panel__body">
+
+        <!-- Auto-pause default -->
+        <div class="settings-row">
+          <div class="settings-row__info">
+            <div class="settings-row__label">Auto-pauza (standart)</div>
+            <div class="settings-row__desc">Video rejimda har bir satrdan so'ng to'xtatish</div>
+          </div>
+          <label class="settings-switch" aria-label="Auto-pauza">
+            <input type="checkbox" id="setting-autopause" />
+            <span class="settings-switch__slider"></span>
+          </label>
+        </div>
+
+        <!-- Partner minimum similarity -->
+        <div class="settings-row">
+          <div class="settings-row__info">
+            <div class="settings-row__label">Sherik qidirish oraligi</div>
+            <div class="settings-row__desc" id="similarity-desc">Minimum moslik: 10%</div>
+          </div>
+          <input type="range" id="setting-similarity" min="5" max="50" step="5" value="10"
+                 class="settings-range" aria-label="Minimum moslik foizi" />
+        </div>
+
+        <!-- About -->
+        <div class="settings-row settings-row--about">
+          <div class="settings-row__info">
+            <div class="settings-row__label">Nativa haqida</div>
+            <div class="settings-row__desc">Versiya 1.0 · WIUT BISP 2026 · @nativacombot</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 </div><!-- /#app -->
 
 <!-- ── JAVASCRIPT ──────────────────────────────────────────────────
@@ -483,11 +548,11 @@
 <!-- Payment / upgrade modal module -->
 <script defer src="js/payment.js?v=20260410b"></script>
 <!-- Feature modules (each handles one tab's logic) -->
-<script defer src="js/video.js?v=20260410b"></script>
-<script defer src="js/reading.js?v=20260410c"></script>
-<script defer src="js/vocabulary.js?v=20260410b"></script>
-<script defer src="js/speaking.js?v=20260410b"></script>
-<script defer src="js/profile.js?v=20260410"></script>
+<script defer src="js/video.js?v=20260415"></script>
+<script defer src="js/reading.js?v=20260415"></script>
+<script defer src="js/vocabulary.js?v=20260415"></script>
+<script defer src="js/speaking.js?v=20260415"></script>
+<script defer src="js/profile.js?v=20260415"></script>
 <!-- Curated starter content: recommended videos + articles injected on DOMContentLoaded -->
 <script defer src="js/recommendations.js?v=20260410"></script>
 

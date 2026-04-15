@@ -135,11 +135,15 @@ async function submitReading() {
 
   // Calculate and display word count + estimated reading time.
   const wordCount = data.word_count || 0;
-  // Average reading speed: 200 words per minute; ceil to avoid "0 minutes".
-  const minutes   = Math.ceil(wordCount / 200);
   const statsEl   = document.getElementById('reading-stats');
   if (statsEl) {
-    statsEl.textContent = `${wordCount} so'z | ~${minutes} daqiqa`;
+    if (wordCount > 0) {
+      // Average reading speed: 200 words per minute.
+      const minutes = Math.ceil(wordCount / 200);
+      statsEl.textContent = `${wordCount} so'z | ~${minutes} daqiqa`;
+    } else {
+      statsEl.textContent = '';
+    }
   }
 
   // Render the tokenised article content.
@@ -224,6 +228,10 @@ function showReadingInputState() {
  * while the backend processes the article.
  */
 function showReadingLoadingSkeleton() {
+  // Clear stale stats so they don't show from a previous article load.
+  const statsEl = document.getElementById('reading-stats');
+  if (statsEl) statsEl.textContent = '';
+
   // Switch to article state to show the skeleton in the right container.
   const inputState   = document.querySelector('.reading-input-state');
   const articleState = document.getElementById('reading-article-state');
