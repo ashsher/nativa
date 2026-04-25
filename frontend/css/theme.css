@@ -1286,6 +1286,71 @@ button {
   transform: none;
 }
 
+/* ── Alert Dialog — centered, requires user OK ───────────────────────────── */
+.alert-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 520;
+  background: rgba(15, 23, 42, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.alert-dialog {
+  background: #ffffff;
+  border: 1.5px solid var(--theme-border);
+  border-radius: 18px;
+  padding: 24px 20px 20px;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 24px 60px -20px rgba(15, 23, 42, 0.5);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alert-dialog--error  { border-color: #fca5a5; }
+.alert-dialog--success { border-color: #86efac; }
+
+.alert-dialog__msg {
+  color: var(--theme-text);
+  font-size: 0.96rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.alert-dialog--error  .alert-dialog__msg { color: #dc2626; }
+.alert-dialog--success .alert-dialog__msg { color: #16a34a; }
+
+.alert-dialog__ok {
+  width: 100%;
+  margin: 0;
+}
+
+/* ── Video header — back button + title row (mirrors .reading-header) ──────── */
+.video-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.video-title-text {
+  flex: 1;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--theme-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
 @media (min-width: 900px) {
   #app {
     padding-left: 26px;

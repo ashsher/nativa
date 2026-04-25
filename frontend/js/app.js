@@ -164,36 +164,36 @@ function applyTelegramColorScheme() {
 }
 
 /**
- * showToast â€” display a temporary notification banner at the top of the screen.
+ * showToast — display a centered modal dialog the user must explicitly dismiss.
  * Exposed globally (on window) so api.js and all feature modules can call it.
  *
- * @param {string} message â€” the text to display
- * @param {'default'|'success'|'error'} type â€” controls the toast's visual style
- * @param {number} [duration=3000] â€” how long the toast stays visible in milliseconds
+ * @param {string} message — the text to display
+ * @param {'default'|'success'|'error'} type — controls the dialog's visual style
+ * @param {number} [duration] — ignored (kept for API compatibility)
  */
 window.showToast = function showToast(message, type = 'default', duration = 3000) {
-  // Locate the toast element created in index.html.
-  const toast = document.getElementById('toast');
-  if (!toast) return; // guard: toast element missing from DOM
+  const overlay = document.getElementById('alert-dialog');
+  const box     = document.getElementById('alert-dialog-box');
+  const msgEl   = document.getElementById('alert-dialog-msg');
+  const okBtn   = document.getElementById('alert-dialog-ok');
 
-  // Clear any previously applied type modifier classes before applying the new one.
-  toast.className = 'toast';
+  if (!overlay || !box || !msgEl || !okBtn) return;
 
-  // Set the message text.
-  toast.textContent = message;
+  // Set message text.
+  msgEl.textContent = message;
 
-  // Apply the semantic type modifier class for colour coding.
-  if (type === 'success') toast.classList.add('toast--success');
-  if (type === 'error')   toast.classList.add('toast--error');
+  // Apply type modifier so CSS can colour-code the dialog.
+  box.className = 'alert-dialog';
+  if (type === 'error')   box.classList.add('alert-dialog--error');
+  if (type === 'success') box.classList.add('alert-dialog--success');
 
-  // Make the toast visible (triggers the toastIn CSS animation from animations.css).
-  toast.classList.add('toast--visible');
+  // Show the overlay.
+  overlay.style.display = 'flex';
 
-  // After the specified duration, hide the toast by reverting to the hidden class.
-  setTimeout(() => {
-    toast.classList.remove('toast--visible');
-    toast.classList.add('toast--hidden');
-  }, duration);
+  // Dismiss on OK click.
+  okBtn.onclick = () => {
+    overlay.style.display = 'none';
+  };
 };
 
 /**

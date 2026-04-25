@@ -82,6 +82,11 @@
 
       <!-- Player state: hidden until a video has been processed by the backend -->
       <div class="video-player-state" id="video-player-state" style="display:none">
+        <!-- Video header: back button on left, video title on right -->
+        <div class="video-header">
+          <button class="btn btn--ghost btn--sm" id="video-back-btn">← Orqaga</button>
+          <span id="video-title" class="video-title-text"></span>
+        </div>
         <!-- YouTube IFrame API mounts the <iframe> inside this container -->
         <div id="youtube-player-container"></div>
         <!-- Auto-pause toggle: video.js wires this button -->
@@ -476,12 +481,21 @@
     Tahlil
   </button>
 
-  <!-- ── TOAST NOTIFICATION ─────────────────────────────────────
-       Global status message shown at the top of the screen.
-       showToast() in app.js toggles toast--hidden / toast--visible.
-       aria-live="polite" announces the message to screen readers.
+  <!-- ── ALERT DIALOG ──────────────────────────────────────────
+       Centered modal that replaces the old auto-dismiss toast.
+       showToast() in app.js opens this; user must press OK.
        ──────────────────────────────────────────────────────────── -->
-  <div id="toast" class="toast toast--hidden" role="status" aria-live="polite"></div>
+  <div id="alert-dialog" class="alert-dialog-overlay" role="alertdialog" aria-modal="true" aria-label="Xabar" style="display:none">
+    <div class="alert-dialog" id="alert-dialog-box">
+      <p id="alert-dialog-msg" class="alert-dialog__msg"></p>
+      <button id="alert-dialog-ok" class="btn btn--primary alert-dialog__ok">OK</button>
+    </div>
+  </div>
+
+  <!-- ── TOAST NOTIFICATION (kept for legacy CSS refs) ─────────
+       Now hidden permanently — showToast() uses alert-dialog.
+       ──────────────────────────────────────────────────────────── -->
+  <div id="toast" class="toast toast--hidden" role="status" aria-live="polite" style="display:none"></div>
 
   <!-- ── SETTINGS MODAL ─────────────────────────────────────────
        Opened from the profile page settings button.

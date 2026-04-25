@@ -14,6 +14,7 @@ import html
 import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse, parse_qs
 
 import httpx
 from fastapi import HTTPException, status
@@ -25,28 +26,64 @@ from app.models.language import Language
 from app.models.sessions import VideoSession
 from app.utils.tokeniser import tokenise_text
 
-# ---------------------------------------------------------------------------
-# Regex that matches any common YouTube URL format and captures the video ID.
-# ---------------------------------------------------------------------------
-_YT_URL_RE = re.compile(
-    r"(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
-)
+_VIDEO_ID_RE = re.compile(r'^[A-Za-z0-9_-]{11}$')
 
 
 def _extract_video_id(url: str) -> str:
     """
-    Extract the 11-character YouTube video ID from a URL string.
+    Extract the 11-character YouTube video ID from any recognised URL format.
+
+    Handles:
+      - https://www.youtube.com/watch?v=ID
+      - https://www.youtube.com/watch?feature=share&v=ID  (params before v=)
+      - https://m.youtube.com/watch?v=ID
+      - https://youtu.be/ID
+      - https://youtube.com/shorts/ID
+      - https://youtube.com/embed/ID
+      - https://youtube.com/live/ID
 
     Raises:
-        HTTPException 400 if the URL does not match a recognised YouTube format.
+        HTTPException 400 if no valid video ID can be extracted.
     """
-    match = _YT_URL_RE.search(url)
-    if not match:
+    try:
+        parsed = urlparse(url.strip())
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Noto'g'ri YouTube havolasi. Iltimos, to'g'ri URL kiriting.",
         )
-    return match.group(1)
+
+    hostname = (parsed.hostname or '').lower()
+    is_youtube = hostname == 'youtu.be' or hostname.endswith('youtube.com')
+    if not is_youtube:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Noto'g'ri YouTube havolasi. Iltimos, to'g'ri URL kiriting.",
+        )
+
+    # ?v= query parameter — works for any param order (e.g. ?feature=share&v=ID)
+    params = parse_qs(parsed.query)
+    if 'v' in params:
+        vid = params['v'][0]
+        if _VIDEO_ID_RE.match(vid):
+            return vid
+
+    # Path-based formats: /shorts/ID, /embed/ID, /live/ID, /v/ID
+    path_parts = [p for p in parsed.path.split('/') if p]
+    for i, part in enumerate(path_parts):
+        if part in ('shorts', 'embed', 'live', 'v') and i + 1 < len(path_parts):
+            candidate = path_parts[i + 1]
+            if _VIDEO_ID_RE.match(candidate):
+                return candidate
+        # youtu.be/ID — video ID is the first path segment
+        if hostname == 'youtu.be' and i == 0:
+            if _VIDEO_ID_RE.match(part):
+                return part
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Noto'g'ri YouTube havolasi. Iltimos, to'g'ri URL kiriting.",
+    )
 
 
 async def _fetch_video_metadata(video_id: str) -> Dict[str, Any]:

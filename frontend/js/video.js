@@ -67,6 +67,12 @@ function renderVideoView() {
     autopauseBtn.addEventListener('click', toggleAutopause);
   }
 
+  // Wire the back button to return to the URL input state.
+  const backBtn = document.getElementById('video-back-btn');
+  if (backBtn) {
+    backBtn.addEventListener('click', showVideoInputState);
+  }
+
   // Wire text-selection AI button.
   wireSelectionHandler();
 }
@@ -179,6 +185,10 @@ async function submitVideoURL(url) {
   const playerState = document.getElementById('video-player-state');
   if (inputState)  inputState.style.display  = 'none';
   if (playerState) playerState.style.display = 'block';
+
+  // Display the video title in the header row.
+  const titleEl = document.getElementById('video-title');
+  if (titleEl) titleEl.textContent = data.title || '';
 
   // Store the segments returned by the backend for the sync loop.
   _segments = data.segments || [];
@@ -404,6 +414,36 @@ function showVideoLoadingSkeleton() {
 function hideVideoLoadingSkeleton() {
   const panel = document.getElementById('subtitle-panel');
   if (panel) panel.innerHTML = '';
+}
+
+/**
+ * showVideoInputState — reset the video panel back to the URL input state.
+ * Called by the ← Orqaga back button. Mirrors showReadingInputState() in reading.js.
+ */
+function showVideoInputState() {
+  // Stop the subtitle sync loop.
+  if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
+
+  // Destroy the YouTube player so it stops consuming resources.
+  if (_ytPlayer) { _ytPlayer.destroy(); _ytPlayer = null; }
+
+  // Clear module state.
+  _segments = [];
+  _lastActiveIdx = -1;
+
+  // Clear subtitle panel content.
+  const panel = document.getElementById('subtitle-panel');
+  if (panel) panel.innerHTML = '';
+
+  // Clear the URL input so the user can paste a new link immediately.
+  const urlInput = document.getElementById('video-url-input');
+  if (urlInput) urlInput.value = '';
+
+  // Show the input state, hide the player state.
+  const inputState  = document.querySelector('.video-input-state');
+  const playerState = document.getElementById('video-player-state');
+  if (playerState) playerState.style.display = 'none';
+  if (inputState)  inputState.style.display  = '';
 }
 
 /**
