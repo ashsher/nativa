@@ -59,10 +59,6 @@ class User(Base):
     # PostgreSQL native array of free-text hobby tags, e.g. ["chess","cooking"].
     hobbies = Column(ARRAY(Text), nullable=True, default=list)
 
-    # Whether the user appears in other users' speaking-partner search results.
-    # Set to False for users who prefer not to be contacted.
-    is_discoverable = Column(Boolean, default=True, nullable=False)
-
     # Whether the user currently holds an active premium subscription.
     is_premium = Column(Boolean, default=False, nullable=False)
 

@@ -48,9 +48,6 @@ class UserUpdate(BaseModel):
     # List of hobby tags selected by the user (e.g. ["chess", "cooking"]).
     hobbies: Optional[List[str]] = Field(None)
 
-    # Whether the user should appear in other users' speaking-partner results.
-    is_discoverable: Optional[bool] = Field(None)
-
 
 # ---------------------------------------------------------------------------
 # Response schemas
@@ -107,9 +104,6 @@ class UserResponse(BaseModel):
 
     # List of hobby tags.
     hobbies: Optional[List[str]] = None
-
-    # Whether the user appears in speaking-partner search results.
-    is_discoverable: bool = True
 
     # Whether the user has an active premium subscription.
     is_premium: bool

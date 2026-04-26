@@ -427,16 +427,11 @@ function wireSettingsModal() {
   if (!modal) return;
 
   function openSettings() {
-    // Sync toggle states before showing.
-    const discoverableEl = document.getElementById('setting-discoverable');
-    const autopauseEl    = document.getElementById('setting-autopause');
-    const similarityEl   = document.getElementById('setting-similarity');
-    const descEl         = document.getElementById('similarity-desc');
+    // Sync toggle states from localStorage before showing.
+    const autopauseEl  = document.getElementById('setting-autopause');
+    const similarityEl = document.getElementById('setting-similarity');
+    const descEl       = document.getElementById('similarity-desc');
 
-    // is_discoverable comes from the server (stored in DB).
-    if (discoverableEl) {
-      discoverableEl.checked = window.currentUser?.is_discoverable !== false;
-    }
     if (autopauseEl) {
       autopauseEl.checked = localStorage.getItem('nativa_autopause') === '1';
     }
@@ -455,22 +450,6 @@ function wireSettingsModal() {
   if (openBtn)  openBtn.addEventListener('click', openSettings);
   if (closeBtn) closeBtn.addEventListener('click', closeSettings);
   if (overlay)  overlay.addEventListener('click', closeSettings);
-
-  // Discoverability toggle: persisted to the server (affects what others see).
-  const discoverableEl = document.getElementById('setting-discoverable');
-  if (discoverableEl) {
-    discoverableEl.addEventListener('change', async () => {
-      const val = discoverableEl.checked;
-      try {
-        const updated = await Api.user.updateMe({ is_discoverable: val });
-        if (window.currentUser) window.currentUser.is_discoverable = updated.is_discoverable;
-      } catch (_) {
-        // Revert the toggle if the API call failed.
-        discoverableEl.checked = !val;
-        showToast("Sozlamani saqlashda xatolik yuz berdi.", 'error');
-      }
-    });
-  }
 
   // Auto-pause toggle: persist to localStorage immediately.
   const autopauseEl = document.getElementById('setting-autopause');

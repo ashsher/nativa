@@ -49,7 +49,6 @@ def _to_user_response(user: User) -> UserResponse:
         country=user.country,
         interests=user.interests,
         hobbies=user.hobbies,
-        is_discoverable=user.is_discoverable if user.is_discoverable is not None else True,
         is_premium=user.is_premium,
         premium_expires_at=user.premium_expires_at,
         created_at=user.created_at,
