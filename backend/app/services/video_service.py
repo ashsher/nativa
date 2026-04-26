@@ -155,15 +155,13 @@ def _normalise_transcript_items(items: list[Any]) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# PRIMARY: InnerTube Android client (most reliable on VPS IPs)
+# InnerTube client definitions
 # ---------------------------------------------------------------------------
 
-# Public InnerTube API key extracted from the YouTube web client source.
-# Used by yt-dlp and many subtitle tools; stable across YouTube clients.
+# Public InnerTube API key (stable, used by yt-dlp and subtitle tools).
 _INNERTUBE_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
 
-# Android client context — mimics the official YouTube Android app.
-# This client bypasses bot detection on VPS IPs without cookies.
+# Android app client — bypasses many VPS IP restrictions.
 _ANDROID_CLIENT = {
     "clientName": "ANDROID",
     "clientVersion": "19.09.37",
@@ -172,6 +170,24 @@ _ANDROID_CLIENT = {
         "com.google.android.youtube/19.09.37 "
         "(Linux; U; Android 11; en_US; sdk_gphone_x86 Build/RSR1.210722.013.A6) "
         "gzip"
+    ),
+    "hl": "en",
+    "gl": "US",
+}
+# X-YouTube-Client-Name value for each client
+_INNERTUBE_CLIENT_IDS = {
+    "ANDROID": "3",
+    "TVHTML5_SIMPLY_EMBEDDED_PLAYER": "85",
+}
+
+# TV embedded player client — different fingerprint from Android;
+# YouTube applies different bot-detection rules to it.
+_TV_EMBEDDED_CLIENT = {
+    "clientName": "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    "clientVersion": "2.0",
+    "userAgent": (
+        "Mozilla/5.0 (PlayStation 4 3.11) AppleWebKit/537.73 "
+        "(KHTML, like Gecko)"
     ),
     "hl": "en",
     "gl": "US",
@@ -192,25 +208,27 @@ def _score_caption_track(lang_code: str, preferred: list[str]) -> int:
 async def _fetch_subtitles_innertube(
     video_id: str,
     preferred_langs: list[str],
+    client_ctx: dict | None = None,
 ) -> list[dict[str, Any]]:
     """
-    Fetch subtitles via YouTube's InnerTube API using the Android client.
+    Fetch subtitles via YouTube's InnerTube API.
 
-    The Android client endpoint accepts unauthenticated requests for public
-    videos and is not subject to the same IP-based bot detection that blocks
-    the web client on VPS / data-centre IPs.
+    Accepts an optional client_ctx to switch between Android and TV-embedded
+    fingerprints — YouTube applies different bot-detection rules to each.
 
     Returns a list of caption dicts (text, start, duration) or [] on failure.
     """
+    ctx = client_ctx or _ANDROID_CLIENT
     payload = {
-        "context": {"client": _ANDROID_CLIENT},
+        "context": {"client": ctx},
         "videoId": video_id,
     }
+    client_id_str = _INNERTUBE_CLIENT_IDS.get(ctx.get("clientName", ""), "3")
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": _ANDROID_CLIENT["userAgent"],
-        "X-YouTube-Client-Name": "3",          # ANDROID = 3
-        "X-YouTube-Client-Version": _ANDROID_CLIENT["clientVersion"],
+        "User-Agent": ctx.get("userAgent", _ANDROID_CLIENT["userAgent"]),
+        "X-YouTube-Client-Name": client_id_str,
+        "X-YouTube-Client-Version": ctx.get("clientVersion", _ANDROID_CLIENT["clientVersion"]),
         "Origin": "https://www.youtube.com",
         "Accept-Language": "en-US,en;q=0.9",
     }
@@ -321,8 +339,16 @@ async def _fetch_subtitles_ytdlp(
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        # iOS client uses the YouTube iOS app API — most reliable on VPS IPs
-        "extractor_args": {"youtube": {"player_client": ["ios", "tv_embedded", "web"]}},
+        # android_creator (YouTube Studio app) is least affected by datacenter
+        # IP bot-detection in 2025; mweb and ios are additional fallbacks.
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android_creator", "android", "ios", "mweb", "tv_embedded"],
+            }
+        },
+        "http_headers": {
+            "Accept-Language": "en-US,en;q=0.9",
+        },
     }
 
     def _extract() -> dict:
@@ -330,7 +356,11 @@ async def _fetch_subtitles_ytdlp(
             return ydl.extract_info(url, download=False)
 
     try:
-        info = await asyncio.get_event_loop().run_in_executor(None, _extract)
+        # Hard 50-second timeout so a hung yt-dlp call doesn't block the request.
+        info = await asyncio.wait_for(
+            asyncio.get_event_loop().run_in_executor(None, _extract),
+            timeout=50.0,
+        )
     except Exception:
         return []
 
@@ -575,26 +605,37 @@ async def process_video(
     preferred_langs = list(dict.fromkeys(preferred_langs))  # dedup, preserve order
 
     # --- Step 3: Fetch subtitles with cascading fallbacks ---
+    # Order: yt-dlp (most maintained, best client variety) → InnerTube Android
+    # → InnerTube TV-embedded (different bot-detection bucket) →
+    # youtube-transcript-api → legacy timedtext.
 
-    # 3a. Primary: youtube-transcript-api new instance API (>=0.6.3).
-    #     This is what worked in the confirmed Flask prototype.
-    try:
-        transcript_list = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: _fetch_best_available_transcript(video_id, preferred_langs),
-        )
-    except Exception:
-        transcript_list = []
+    # 3a. yt-dlp with android_creator/ios/mweb clients.
+    transcript_list = await _fetch_subtitles_ytdlp(video_id, preferred_langs)
 
-    # 3b. Secondary: InnerTube Android client (pure httpx, no extra package).
+    # 3b. InnerTube Android client (pure httpx, no extra package).
     if not transcript_list:
         transcript_list = await _fetch_subtitles_innertube(video_id, preferred_langs)
 
-    # 3c. Tertiary: yt-dlp (if installed).
+    # 3c. InnerTube TV-embedded client (different fingerprint / bot-detection bucket).
     if not transcript_list:
-        transcript_list = await _fetch_subtitles_ytdlp(video_id, preferred_langs)
+        transcript_list = await _fetch_subtitles_innertube(
+            video_id, preferred_langs, _TV_EMBEDDED_CLIENT
+        )
 
-    # 3d. Last resort: legacy timedtext endpoint.
+    # 3d. youtube-transcript-api instance API (>=0.6.3).
+    if not transcript_list:
+        try:
+            transcript_list = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: _fetch_best_available_transcript(video_id, preferred_langs),
+                ),
+                timeout=30.0,
+            )
+        except Exception:
+            transcript_list = []
+
+    # 3e. Last resort: legacy timedtext endpoint.
     if not transcript_list:
         try:
             transcript_list = await _fetch_timedtext_fallback(video_id, preferred_langs)
