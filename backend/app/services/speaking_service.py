@@ -82,6 +82,7 @@ async def get_matches(
             UserLanguage.language_id == language_id,
             UserLanguage.is_active == True,  # noqa: E712
             User.user_id != current_user.user_id,
+            User.is_discoverable == True,  # noqa: E712 — respect privacy setting
         )
     )
     result = await db.execute(stmt)
